@@ -44,6 +44,13 @@ func (m *Manager) AddPlugin(provider string, plugin types.Plugin) error {
 	return nil
 }
 
+func (m *Manager) AddPlugins(provider string, plugins ...types.Plugin) error {
+	for _, plugin := range plugins {
+		m.AddPlugin(provider, plugin)
+	}
+	return nil
+}
+
 /**
  * This function gets a plugin from the plugin manager.
  */

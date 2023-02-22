@@ -1,6 +1,8 @@
 package destinations
 
 import (
+	"errors"
+
 	"github.com/rudderlabs/rudder-transformations/plugins/types"
 )
 
@@ -15,5 +17,10 @@ func (p *DefaultPlugin) GetTransformer(data interface{}) (types.Transformer, err
 }
 
 func (p *DefaultPlugin) Transform(data interface{}) (interface{}, error) {
-	return data, nil
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("data is not a map")
+	}
+	dataMap["default"] = true
+	return dataMap, nil
 }
