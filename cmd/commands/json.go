@@ -62,10 +62,10 @@ func (c *jsonTransformer) transform(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	outputFile := cmd.Flag("output").Value.String()
-	if err = os.MkdirAll(filepath.Dir(outputFile), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Dir(outputFile), 0o755); err != nil {
 		return err
 	}
-	err = os.WriteFile(outputFile, output, 0644)
+	err = os.WriteFile(outputFile, output, 0o644)
 	return err
 }
 
@@ -78,9 +78,13 @@ func GetJSONCmd(manager *plugins.Manager) *cobra.Command {
 		RunE:  jsonTransformer.transform,
 	}
 	jsonCobraCmd.Flags().StringP("input", "i", "", "input json file")
-	jsonCobraCmd.MarkFlagRequired("input")
+	if err := jsonCobraCmd.MarkFlagRequired("input"); err != nil {
+		panic(err)
+	}
 	jsonCobraCmd.Flags().StringP("output", "o", "output.json", "output json file")
 	jsonCobraCmd.Flags().StringP("provider", "p", "", "provider name")
-	jsonCobraCmd.MarkFlagRequired("provider")
+	if err := jsonCobraCmd.MarkFlagRequired("provider"); err != nil {
+		panic(err)
+	}
 	return jsonCobraCmd
 }

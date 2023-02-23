@@ -39,6 +39,6 @@ func (p *TestPlugin) GetTransformer(data interface{}) (types.Transformer, error)
 func GetTestPluginManager() *plugins.Manager {
 	pluginManager := plugins.NewManager()
 	pluginManager.AddPluginProvider(destinations.NewPluginProvider())
-	pluginManager.AddPlugins(destinations.PROVIDER_NAME, &TestPlugin{}, &destinations.DefaultPlugin{})
+	_ = pluginManager.AddPlugins(destinations.PROVIDER_NAME, &TestPlugin{}, &destinations.DefaultPlugin{})
 	return pluginManager
 }

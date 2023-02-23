@@ -12,7 +12,9 @@ import (
  * ./bin/transform  json -i cmd/commands/testdata/input.json -p destinations
  */
 func main() {
-	var rootCmd = &cobra.Command{Use: "transform"}
+	rootCmd := &cobra.Command{Use: "transform"}
 	rootCmd.AddCommand(commands.GetJSONCmd(plugins.ManagerInstance))
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		panic(err)
+	}
 }

@@ -46,7 +46,9 @@ func (m *Manager) AddPlugin(provider string, plugin types.Plugin) error {
 
 func (m *Manager) AddPlugins(provider string, plugins ...types.Plugin) error {
 	for _, plugin := range plugins {
-		m.AddPlugin(provider, plugin)
+		if err := m.AddPlugin(provider, plugin); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -54,7 +56,7 @@ func (m *Manager) AddPlugins(provider string, plugins ...types.Plugin) error {
 /**
  * This function gets a plugin from the plugin manager.
  */
-func (m *Manager) GetPlugin(provider string, plugin string) (types.Plugin, bool) {
+func (m *Manager) GetPlugin(provider, plugin string) (types.Plugin, bool) {
 	pluginProvider, ok := m.providers[provider]
 	if !ok {
 		return nil, false

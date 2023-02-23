@@ -1,3 +1,5 @@
 generated
 bin
 output.json
+cover.out
+coverage.html
