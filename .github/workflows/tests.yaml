@@ -18,6 +18,5 @@ jobs:
 
     - run: go version
     - run: go mod download # Not required, used to segregate module download vs test times
-    - env:
-      run: make test
+    - run: make test
     - uses: codecov/codecov-action@v2
