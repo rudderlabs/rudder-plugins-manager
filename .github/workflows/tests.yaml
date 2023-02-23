@@ -9,7 +9,7 @@ jobs:
     name: Unit
     runs-on: 'ubuntu-20.04'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-go@v3
       with:
         go-version: '~1.20.1'
@@ -19,4 +19,4 @@ jobs:
     - run: go version
     - run: go mod download # Not required, used to segregate module download vs test times
     - run: make test
-    - uses: codecov/codecov-action@v2
+    - uses: codecov/codecov-action@v3
