@@ -11,7 +11,7 @@ import (
  * This struct is used to manage plugins.
  */
 type Manager struct {
-	providers map[string]types.PluginProvider
+	providers map[string]*types.PluginProvider
 }
 
 var ManagerInstance *Manager
@@ -21,15 +21,15 @@ var ManagerInstance *Manager
  */
 func NewManager() *Manager {
 	return &Manager{
-		providers: make(map[string]types.PluginProvider),
+		providers: make(map[string]*types.PluginProvider),
 	}
 }
 
 /**
  * This function adds a plugin to the plugin manager.
  */
-func (m *Manager) AddPluginProvider(provider types.PluginProvider) {
-	m.providers[provider.Name()] = provider
+func (m *Manager) AddPluginProvider(provider *types.PluginProvider) {
+	m.providers[provider.GetName()] = provider
 }
 
 /**
@@ -56,10 +56,10 @@ func (m *Manager) AddPlugins(provider string, plugins ...types.Plugin) error {
 /**
  * This function gets a plugin from the plugin manager.
  */
-func (m *Manager) GetPlugin(provider, plugin string) (types.Plugin, bool) {
+func (m *Manager) GetPlugin(provider, plugin string) (types.Plugin, error) {
 	pluginProvider, ok := m.providers[provider]
 	if !ok {
-		return nil, false
+		return nil, errors.New("provider not found")
 	}
 	return pluginProvider.GetPlugin(plugin)
 }

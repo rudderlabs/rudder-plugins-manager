@@ -2,13 +2,15 @@
   {
     "plugin": "default",
     "data": {
-      "foo": "bar"
+      "foo": "bar",
+      "default": true
     }
   },
   {
     "plugin": "test",
     "data": {
-      "cat": "dog"
+      "cat": "dog",
+      "response": true
     },
     "metadata": {
       "type": "response"
@@ -18,6 +20,12 @@
     "plugin": "unknown",
     "data": {
       "day": "night"
+    }
+  },
+  {
+    "plugin": "bad",
+    "data": {
+      "open": "close"
     }
   }
 ]

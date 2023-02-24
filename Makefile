@@ -1,9 +1,11 @@
+install:
+		sh install-hooks.sh
 default: build
 
 test: install-tools test-run
 
 test-run:
-		gotestsum -- -coverprofile=cover.out ./...
+		gotestsum -- -count=1  -coverprofile=cover.out ./...
 
 build:
 		go build -o bin/$(NAME) ./cmd/$(NAME).go

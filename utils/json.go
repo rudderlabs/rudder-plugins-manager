@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func ReadJSONFromFile[T any](jsonFile string) ([]T, error) {
+func ReadRecordsFromJSONFile[T any](jsonFile string) ([]T, error) {
 	var records []T
 	data, err := os.ReadFile(jsonFile)
 	if err != nil {

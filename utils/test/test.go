@@ -12,11 +12,25 @@ const TEST_PLUGIN_NAME = "test"
 
 type TestPlugin struct{}
 
-func (p *TestPlugin) Name() string {
-	return TEST_PLUGIN_NAME
+func (t *TestPlugin) doDefaultTransform(data interface{}) (interface{}, error) {
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("data is not a map")
+	}
+	dataMap["default"] = true
+	return dataMap, nil
 }
 
-func (p *TestPlugin) GetTransformer(data interface{}) (types.Transformer, error) {
+func (t *TestPlugin) doResponseTransform(data interface{}) (interface{}, error) {
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("data is not a map")
+	}
+	dataMap["response"] = true
+	return dataMap, nil
+}
+
+func (t *TestPlugin) GetTransformer(data interface{}) (types.Transformer, error) {
 	dataMap, ok := data.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("data is not a map")
@@ -24,21 +38,26 @@ func (p *TestPlugin) GetTransformer(data interface{}) (types.Transformer, error)
 
 	switch dataMap["type"] {
 	case "response":
-		return types.TransformerFunc(func(data interface{}) (interface{}, error) {
-			data.(map[string]interface{})["response"] = true
-			return data, nil
-		}), nil
+		return types.TransformerFunc(t.doResponseTransform), nil
 	default:
-		return types.TransformerFunc(func(data interface{}) (interface{}, error) {
-			data.(map[string]interface{})["default"] = true
-			return data, nil
-		}), nil
+		return types.TransformerFunc(t.doDefaultTransform), nil
 	}
+}
+
+func (t *TestPlugin) GetName() string {
+	return TEST_PLUGIN_NAME
 }
 
 func GetTestPluginManager() *plugins.Manager {
 	pluginManager := plugins.NewManager()
-	pluginManager.AddPluginProvider(destinations.NewPluginProvider())
-	_ = pluginManager.AddPlugins(destinations.PROVIDER_NAME, &TestPlugin{}, &destinations.DefaultPlugin{})
+	pluginManager.AddPluginProvider(types.NewPluginProvider(destinations.PROVIDER_NAME))
+	_ = pluginManager.AddPlugins(destinations.PROVIDER_NAME, &TestPlugin{}, destinations.DefaultPlugin)
 	return pluginManager
 }
+
+var BadPlugin = types.NewSimplePlugin(
+	"bad",
+	func(data interface{}) (interface{}, error) {
+		return nil, errors.New("bad plugin")
+	},
+)

@@ -12,10 +12,10 @@ import (
 )
 
 type Record struct {
-	Plugin string      `json:"plugin"`
-	Data   interface{} `json:"data"`
+	Plugin string `json:"plugin"`
+	Data   any    `json:"data"`
 	// Transformation function is applied based on metadata
-	MetaData interface{} `json:"metadata"`
+	MetaData any `json:"metadata"`
 }
 
 type jsonTransformer struct {
@@ -24,9 +24,9 @@ type jsonTransformer struct {
 
 func (c *jsonTransformer) transformRecords(records []Record, provider string) ([]Record, error) {
 	for i, record := range records {
-		plugin, ok := c.pluginsManager.GetPlugin(provider, record.Plugin)
-		if !ok {
-			fmt.Printf("plugin %s not found\n", record.Plugin)
+		plugin, err := c.pluginsManager.GetPlugin(provider, record.Plugin)
+		if err != nil {
+			fmt.Printf("%v", err)
 			continue
 		}
 		metadata := record.MetaData
@@ -35,12 +35,12 @@ func (c *jsonTransformer) transformRecords(records []Record, provider string) ([
 		}
 		transformer, err := plugin.GetTransformer(metadata)
 		if err != nil {
-			fmt.Printf("failed to get transformer with data %v of plugin %s\n", metadata, record.Plugin)
+			fmt.Printf("get transformer with data %v of plugin %s was failed with error %v\n", metadata, record.Plugin, err)
 			continue
 		}
 		records[i].Data, err = transformer.Transform(record.Data)
 		if err != nil {
-			fmt.Printf("failed to transform the data %v for plugin %s\n", record.Data, record.Plugin)
+			fmt.Printf("transforming the data %v for plugin %s was failed with error %v\n", record.Data, record.Plugin, err)
 			continue
 		}
 	}
@@ -48,7 +48,7 @@ func (c *jsonTransformer) transformRecords(records []Record, provider string) ([
 }
 
 func (c *jsonTransformer) transform(cmd *cobra.Command, args []string) error {
-	records, err := utils.ReadJSONFromFile[Record](cmd.Flag("input").Value.String())
+	records, err := utils.ReadRecordsFromJSONFile[Record](cmd.Flag("input").Value.String())
 	if err != nil {
 		return err
 	}

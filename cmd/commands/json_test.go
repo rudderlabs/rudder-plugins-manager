@@ -18,12 +18,14 @@ type TransformedRecord struct {
 func TestJSONCmd(t *testing.T) {
 	pluginManager := test.GetTestPluginManager()
 	command := commands.GetJSONCmd(pluginManager)
-	command.SetArgs([]string{"--input", "testdata/input.json", "--output", "generated/output.json", "--provider", "destinations"})
+
+	command.SetArgs([]string{"--input", "../../testdata/input.json", "--output", "generated/output.json", "--provider", "destinations"})
 	err := command.Execute()
 	assert.Nil(t, err)
-	expected, err := utils.ReadJSONFromFile[TransformedRecord]("testdata/expected_output.json")
+
+	expected, err := utils.ReadRecordsFromJSONFile[TransformedRecord]("../../testdata/expected_output.json")
 	assert.Nil(t, err)
-	actual, err := utils.ReadJSONFromFile[TransformedRecord]("generated/output.json")
+	actual, err := utils.ReadRecordsFromJSONFile[TransformedRecord]("generated/output.json")
 	assert.Nil(t, err)
 	assert.Equal(t, expected, actual)
 }
