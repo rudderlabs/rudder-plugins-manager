@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.1.0...v0.2.0) (2023-03-04)
+
+
+### Features
+
+* add plugin types for easy using of this library ([010c45e](https://github.com/rudderlabs/rudder-plugins-manager/commit/010c45ec9e90f3c6f6096248c15381f72578069b))
+
+
+### Miscellaneous
+
+* upgrade github actions ([046f92c](https://github.com/rudderlabs/rudder-plugins-manager/commit/046f92cfc52f15e29dbd9c1d141efc460b43500a))
+
 ## 0.1.0 (2023-02-23)
 
 ### Features
