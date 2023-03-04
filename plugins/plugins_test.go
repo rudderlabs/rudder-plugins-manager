@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/rudderlabs/rudder-plugins-manager/plugins"
+	"github.com/rudderlabs/rudder-plugins-manager/types"
 	"github.com/rudderlabs/rudder-plugins-manager/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,6 +19,8 @@ var testPlugin = plugins.NewTransformPlugin("test", func(data any) (any, error) 
 	dataMap["test"] = "test"
 	return dataMap, nil
 })
+
+var bloblPlugin = utils.Must(plugins.NewBloblangPlugin("blobl", `root.secret = this.secret.encode("base64")`))
 
 var sampleStepPlugin = plugins.BaseStepPlugin{
 	Name: "sampleStepPlugin",
@@ -45,9 +48,7 @@ func TestNewSimplePlugin(t *testing.T) {
 }
 
 func TestNewSimpleBlobLPlugin(t *testing.T) {
-	plugin, err := plugins.NewBloblangPlugin("test", `root.secret = this.secret.encode("base64")`)
-	assert.Nil(t, err)
-	data, err := plugin.Execute(context.Background(), map[string]any{
+	data, err := bloblPlugin.Execute(context.Background(), map[string]any{
 		"secret": "secret",
 	})
 
@@ -97,4 +98,36 @@ func TestWorkflowPlugin(t *testing.T) {
 	data, err := plugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]any{"blobl": true}, data)
+}
+
+func TestPluginManagerExecute(t *testing.T) {
+	manager := plugins.NewPluginManager()
+	manager.AddPlugin(testPlugin)
+	data, err := manager.Execute(context.Background(), "test", map[string]any{})
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"test": "test"}, data)
+}
+
+func TestPluginManagerExecuteWithNextPlugin(t *testing.T) {
+	manager := plugins.NewPluginManager()
+	pluginOrchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
+		dataMap, ok := data.(map[string]any)
+		if !ok {
+			return nil, errors.New("data is not a map")
+		}
+		if dataMap["testPlugin"] != nil {
+			return types.NextPlugin{NextPluginName: utils.StringPtr("test"), Data: data}, nil
+		}
+		return types.NextPlugin{NextPluginName: utils.StringPtr("blobl"), Data: data}, nil
+	})
+	manager.AddPlugin(testPlugin)
+	manager.AddPlugin(bloblPlugin)
+	manager.AddPlugin(pluginOrchestrator)
+	assert.NotNil(t, pluginOrchestrator)
+	data, err := manager.Execute(context.Background(), "orchestrator", map[string]any{"testPlugin": true})
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"test": "test", "testPlugin": true}, data)
+	data, err = manager.Execute(context.Background(), "orchestrator", map[string]any{"secret": "secret"})
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"secret": "c2VjcmV0"}, data)
 }

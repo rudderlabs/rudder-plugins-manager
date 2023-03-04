@@ -28,3 +28,8 @@ type TransformFunc func(any) (any, error)
 func (f TransformFunc) Execute(_ context.Context, data any) (any, error) {
 	return f(data)
 }
+
+type NextPlugin struct {
+	NextPluginName *string `mapstructure:"nextPluginName"`
+	Data           any     `mapstructure:"data"`
+}
