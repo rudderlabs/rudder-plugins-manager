@@ -42,7 +42,7 @@ type BloblangPlugin struct {
 	executor *bloblang.Executor
 }
 
-func NewBloblangPlugin(name string, template string) (*BloblangPlugin, error) {
+func NewBloblangPlugin(name, template string) (*BloblangPlugin, error) {
 	executor, err := bloblang.Parse(template)
 	if err != nil {
 		return nil, err
