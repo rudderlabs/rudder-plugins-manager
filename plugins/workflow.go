@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/benthosdev/benthos/v4/public/bloblang"
 	"github.com/mitchellh/mapstructure"
@@ -94,12 +95,6 @@ func (w *WorkflowPlugin) Execute(ctx context.Context, input any) (any, error) {
 	return stepInput.Data, nil
 }
 
-type WorkflowStepExecutor interface {
-	GetName() string
-	ShouldExecute(data any, workflowContext map[string]any) (bool, error)
-	Execute(ctx context.Context, data any, workflowContext map[string]any) (any, error)
-}
-
 type BloblangWorkflow struct {
 	Name  string                 `yaml:"name"`
 	Steps []BloblangWorkflowStep `yaml:"steps"`
@@ -138,13 +133,13 @@ func NewBloblangStepPlugin(step BloblangWorkflowStep) (*BloblangStepPlugin, erro
 	}
 	if step.Condition != nil {
 		if condition, err := bloblang.Parse(*step.Condition); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse condition for step %s: %w", step.Name, err)
 		} else {
 			stepPlugin.condition = condition
 		}
 	}
 	if template, err := bloblang.Parse(step.Template); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse template for step %s: %w", step.Name, err)
 	} else {
 		stepPlugin.template = template
 	}

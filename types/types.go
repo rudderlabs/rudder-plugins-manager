@@ -29,7 +29,6 @@ func (f TransformFunc) Execute(_ context.Context, data any) (any, error) {
 	return f(data)
 }
 
-type NextPlugin struct {
-	NextPluginName *string `mapstructure:"nextPluginName"`
-	Data           any     `mapstructure:"data"`
+type PluginManager interface {
+	GetPlugin(name string) (Plugin, error)
 }
