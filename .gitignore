@@ -1,6 +1,6 @@
 generated
 bin
 output.json
-cover.out
+coverage.txt
 coverage.html
-generated.json
+

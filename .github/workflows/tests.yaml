@@ -18,5 +18,8 @@ jobs:
 
     - run: go version
     - run: go mod download # Not required, used to segregate module download vs test times
-    - run: make test
-    - uses: codecov/codecov-action@v3
+    - run: make test-with-coverage
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}

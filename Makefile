@@ -5,7 +5,7 @@ default: build
 test: install-tools test-run
 
 test-run:
-		gotestsum -- -count=1  -coverprofile=cover.out ./...
+		gotestsum --format pkgname-and-test-fails -- -count=1 -shuffle=on  -coverprofile=coverage.txt -vet=all ./...
 
 build:
 		go build -o bin/$(NAME) ./cmd/$(NAME).go
@@ -13,7 +13,7 @@ build:
 test-with-coverage: test coverage
 
 coverage:
-	go tool cover -html=cover.out -o coverage.html
+	go tool cover -html=coverage.txt -o coverage.html
 
 install-tools:
 	go install mvdan.cc/gofumpt@latest
