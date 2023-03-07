@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.1.0...v0.2.0) (2023-03-07)
+
+
+### Features
+
+* add plugin execute function ([e6749c0](https://github.com/rudderlabs/rudder-plugins-manager/commit/e6749c0d8292ec41992f22cfebbc57a8f5b5b825))
+* add plugin types for easy using of this library ([010c45e](https://github.com/rudderlabs/rudder-plugins-manager/commit/010c45ec9e90f3c6f6096248c15381f72578069b))
+
+
+### Miscellaneous
+
+* plugins and add tests ([cb95596](https://github.com/rudderlabs/rudder-plugins-manager/commit/cb95596d92970d6a153845754c60eab71cc8d767))
+* update make file and github workflows ([76f48b5](https://github.com/rudderlabs/rudder-plugins-manager/commit/76f48b545daf74052e9da6e5dc0460f56463b81e))
+* upgrade github actions ([046f92c](https://github.com/rudderlabs/rudder-plugins-manager/commit/046f92cfc52f15e29dbd9c1d141efc460b43500a))
+
 ## 0.1.0 (2023-02-23)
 
 ### Features
