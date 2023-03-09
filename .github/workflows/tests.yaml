@@ -23,3 +23,7 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+    - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
+      uses: tj-actions/coverage-badge-go@v2
+      with:
+        filename: coverage.txt
