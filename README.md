@@ -18,10 +18,9 @@
 
 ---
 
-# \*\*Repo Name\*\*
+## Rudder Plugins Manager
 
-\*\*Repo description\*\*
-
+Provides interfaces to write plugins and also provides useful and generic plugins for general usage.
 ## Overview
 
 \*\*Describe what the software does.\*\*
