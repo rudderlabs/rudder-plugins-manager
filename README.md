@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/rudderlabs/rudder-plugins-manager/branch/main/graph/badge.svg?token=ErUmduv9C8)](https://codecov.io/gh/rudderlabs/rudder-plugins-manager)
 <p align="center">
   <a href="https://rudderstack.com/">
     <img src="https://user-images.githubusercontent.com/59817155/121357083-1c571300-c94f-11eb-8cc7-ce6df13855c9.png">
