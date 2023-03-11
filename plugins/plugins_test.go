@@ -92,20 +92,28 @@ func TestNewSimpleBlobLPluginCondition(t *testing.T) {
 		},
 	}
 	data, err = plugin.Execute(context.Background(), stepInput.ToMap())
-
 	assert.Nil(t, err)
 	assert.True(t, data.(bool))
 }
 
-func TestNewPluginManager(t *testing.T) {
-	manager := plugins.NewPluginManager()
-	manager.AddPlugin(testPlugin)
-	plugin, err := manager.GetPlugin("test")
+func TestNewBasePluginManager(t *testing.T) {
+	manager := plugins.NewBasePluginManager()
+	manager.Add(testPlugin)
+	plugin, err := manager.Get("test")
 	assert.Nil(t, err)
 	assert.Equal(t, "test", plugin.GetName())
-	plugin, err = manager.GetPlugin("non-existing-plugin")
+	plugin, err = manager.Get("non-existing-plugin")
 	assert.NotNil(t, err)
 	assert.Nil(t, plugin)
+	assert.ErrorContains(t, err, "plugin not found")
+
+	result, err := manager.Execute(context.Background(), "test", map[string]any{})
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"test": "test"}, result)
+
+	result, err = manager.Execute(context.Background(), "non-existing-plugin", map[string]any{})
+	assert.NotNil(t, err)
+	assert.Nil(t, result)
 	assert.ErrorContains(t, err, "plugin not found")
 }
 
@@ -248,11 +256,11 @@ func TestWorkflowPluginFailureCases(t *testing.T) {
 }
 
 func TestOrchestratorPlugin(t *testing.T) {
-	manager := plugins.NewPluginManager()
+	manager := plugins.NewBasePluginManager()
 	identity := plugins.NewTransformPlugin("identity", func(data any) (any, error) {
 		return data, nil
 	})
-	manager.AddPlugin(identity)
+	manager.Add(identity)
 	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
 		return "identity", nil
 	})
@@ -264,9 +272,9 @@ func TestOrchestratorPlugin(t *testing.T) {
 }
 
 func TestPluginManagerAddOrchestrator(t *testing.T) {
-	manager := plugins.NewPluginManager()
-	manager.AddPlugin(testPlugin)
-	manager.AddPlugin(bloblPlugin)
+	manager := plugins.NewBasePluginManager()
+	manager.Add(testPlugin)
+	manager.Add(bloblPlugin)
 	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
 		dataMap, ok := data.(map[string]any)
 		if !ok {
@@ -279,7 +287,7 @@ func TestPluginManagerAddOrchestrator(t *testing.T) {
 	})
 
 	manager.AddOrchestrator(orchestrator)
-	pluginOrchestrator, err := manager.GetPlugin("orchestrator")
+	pluginOrchestrator, err := manager.Get("orchestrator")
 	assert.Nil(t, err)
 	data, err := pluginOrchestrator.Execute(context.Background(), map[string]any{"testPlugin": true})
 	assert.Nil(t, err)
@@ -290,7 +298,7 @@ func TestPluginManagerAddOrchestrator(t *testing.T) {
 }
 
 func TestOrchestratorPluginFailureCases(t *testing.T) {
-	manager := plugins.NewPluginManager()
+	manager := plugins.NewBasePluginManager()
 	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
 		dataMap, ok := data.(map[string]any)
 		if !ok {
@@ -304,7 +312,7 @@ func TestOrchestratorPluginFailureCases(t *testing.T) {
 	})
 
 	manager.AddOrchestrator(orchestrator)
-	pluginOrchestrator, err := manager.GetPlugin(orchestrator.GetName())
+	pluginOrchestrator, err := manager.Get(orchestrator.GetName())
 	assert.Nil(t, err)
 	data, err := pluginOrchestrator.Execute(context.Background(), map[string]any{"test": "test"})
 	assert.NotNil(t, err)
@@ -317,7 +325,7 @@ func TestOrchestratorPluginFailureCases(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid input")
 
 	manager.AddOrchestrator(testPlugin)
-	pluginOrchestrator, err = manager.GetPlugin(testPlugin.GetName())
+	pluginOrchestrator, err = manager.Get(testPlugin.GetName())
 	assert.Nil(t, err)
 	data, err = pluginOrchestrator.Execute(context.Background(), map[string]any{"test": "test"})
 	assert.NotNil(t, err)

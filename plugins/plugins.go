@@ -77,7 +77,7 @@ func (p *OrchestratorPlugin) Execute(ctx context.Context, data any) (any, error)
 	if !ok {
 		return nil, fmt.Errorf("plugin is not an orchestrator: result must be a string")
 	}
-	nextPlugin, err := p.manager.GetPlugin(pluginName)
+	nextPlugin, err := p.manager.Get(pluginName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plugin: %s, error: %w", pluginName, err)
 	}
