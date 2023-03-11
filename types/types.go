@@ -36,6 +36,7 @@ type PluginManager interface {
 }
 
 type Pipeline interface {
+	GetName() string
 	Start(ctx context.Context) error
 	Submit(ctx context.Context, data any) error
 }
