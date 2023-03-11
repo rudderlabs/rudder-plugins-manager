@@ -45,4 +45,5 @@ type PipelineManager interface {
 	Get(name string) (Pipeline, error)
 	Add(pipeline Pipeline)
 	Start(ctx context.Context) error
+	Submit(ctx context.Context, name string, data any) error
 }
