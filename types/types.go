@@ -34,16 +34,3 @@ type PluginManager interface {
 	Add(plugin Plugin)
 	Execute(ctx context.Context, name string, data any) (any, error)
 }
-
-type Pipeline interface {
-	GetName() string
-	Start(ctx context.Context) error
-	Submit(ctx context.Context, data any) error
-}
-
-type PipelineManager interface {
-	Get(name string) (Pipeline, error)
-	Add(pipeline Pipeline)
-	Start(ctx context.Context) error
-	Submit(ctx context.Context, name string, data any) error
-}
