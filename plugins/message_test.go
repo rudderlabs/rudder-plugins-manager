@@ -10,6 +10,8 @@ func TestMessageClone(t *testing.T) {
 	testMsg := testMessage()
 	clone := testMsg.Clone()
 	assert.Equal(t, testMsg, clone)
+	clone.SetMetadata("test", "test")
+	assert.NotEqual(t, testMsg, clone)
 }
 
 func TestMessageMetadata(t *testing.T) {
