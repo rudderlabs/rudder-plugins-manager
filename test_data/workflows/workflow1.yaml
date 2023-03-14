@@ -1,0 +1,20 @@
+name: workflow1
+steps:
+  - name: test
+    check: this.data.test == "test"
+    plugin: test
+    return: true
+
+  - name: bad_check
+    check: throw("error")
+    plugin: test
+    continue: true
+    
+  - name: bad_plugin
+    plugin: bad
+    continue: true
+
+  - name: blobl
+    bloblang: |
+      root = this.data
+      root.blobl = true

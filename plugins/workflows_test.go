@@ -1,0 +1,249 @@
+package plugins_test
+
+import (
+	"context"
+	"os"
+	"testing"
+
+	"github.com/rudderlabs/rudder-plugins-manager/plugins"
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
+)
+
+func TestWorkflowEngine(t *testing.T) {
+	pluginManager := plugins.NewBasePluginManager()
+	pluginManager.Add(testPlugin)
+	pluginManager.Add(bloblPlugin)
+	pluginManager.Add(badPlugin)
+
+	var workflowConfig1 plugins.WorkflowConfig
+	err := yaml.Unmarshal(lo.Must(os.ReadFile("../test_data/workflows/workflow1.yaml")), &workflowConfig1)
+	assert.Nil(t, err)
+	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, workflowConfig1)
+	assert.Nil(t, err)
+	assert.NotNil(t, workflowPlugin)
+	assert.Equal(t, workflowConfig1.Name, workflowPlugin.GetName())
+	bloblStep, err := workflowPlugin.GetStep("blobl")
+	assert.Nil(t, err)
+	assert.NotNil(t, bloblStep)
+	assert.Equal(t, "blobl", bloblStep.GetName())
+	assert.Equal(t, plugins.BloblangStep, bloblStep.GetType())
+	steps := workflowPlugin.GetSteps()
+	assert.Equal(t, len(workflowConfig1.Steps), len(steps))
+
+	result, err := workflowPlugin.ExecuteStep(context.Background(), "blobl", emptyMessage())
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"blobl": true}, result.Data)
+
+	result, err = workflowPlugin.Execute(context.Background(), testMessage())
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"test": "test"}, result.Data)
+
+	result, err = workflowPlugin.Execute(context.Background(), emptyMessage())
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"blobl": true}, result.Data)
+}
+
+func TestWorkflowInvalidConfig(t *testing.T) {
+	type errorTestCase struct {
+		workflowConfig plugins.WorkflowConfig
+		expectedError  string
+		pluginManager  plugins.PluginManager
+	}
+
+	testCases := []errorTestCase{
+		{
+			expectedError: "workflow name is required",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+			},
+			expectedError: "workflow must have at least one step",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{},
+				},
+			},
+			expectedError: "step name is required",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name: "test",
+					},
+				},
+			},
+			expectedError: "unknown step type",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:   "test",
+						Plugin: "test",
+					},
+				},
+			},
+			expectedError: "plugin manager is required when plugin is set",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Bloblang: "this",
+						Return:   true,
+					},
+				},
+			},
+			expectedError: "return is only allowed when check is set",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Check:    "some check",
+						Bloblang: "this",
+					},
+				},
+			},
+			expectedError: "failed to parse bloblang template",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Bloblang: "some bloblang",
+					},
+				},
+			},
+			expectedError: "failed to parse bloblang template",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:   "test",
+						Plugin: "test",
+					},
+				},
+			},
+			expectedError: "plugin not found",
+			pluginManager: plugins.NewBasePluginManager(),
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Bloblang: "this",
+					},
+					{
+						Name:     "test",
+						Bloblang: "this",
+					},
+				},
+			},
+			expectedError: "workflow steps must have unique names",
+		},
+	}
+
+	for _, testCase := range testCases {
+		workflowPlugin, err := plugins.NewBaseWorkflowPlugin(testCase.pluginManager, testCase.workflowConfig)
+		assert.Nil(t, workflowPlugin)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, testCase.expectedError)
+	}
+}
+
+func TestWorkflowExecutionFailures(t *testing.T) {
+	type errorTestCase struct {
+		workflowConfig plugins.WorkflowConfig
+		expectedError  string
+	}
+
+	testCases := []errorTestCase{
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Bloblang: `throw("some error")`,
+					},
+				},
+			},
+			expectedError: "some error",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						Check:    `throw("some error")`,
+						Bloblang: `this`,
+					},
+				},
+			},
+			expectedError: "some error",
+		},
+	}
+	for _, testCase := range testCases {
+		pluginManager := plugins.NewBasePluginManager()
+		workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, testCase.workflowConfig)
+		assert.Nil(t, err)
+		assert.NotNil(t, workflowPlugin)
+		result, err := workflowPlugin.Execute(context.Background(), emptyMessage())
+		assert.Nil(t, result)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, testCase.expectedError)
+	}
+}
+
+func TestWorkflowGetStepFailureCase(t *testing.T) {
+	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(nil, plugins.WorkflowConfig{
+		Name: "test",
+		Steps: []plugins.StepConfig{
+			{
+				Name:     "test",
+				Bloblang: "this",
+			},
+		},
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, workflowPlugin)
+	_, err = workflowPlugin.GetStep("not-existent")
+	assert.ErrorContains(t, err, "step not-existent not found")
+}
+
+func TestWorkflowExecuteStepFailureCases(t *testing.T) {
+	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(nil, plugins.WorkflowConfig{
+		Name: "test",
+		Steps: []plugins.StepConfig{
+			{
+				Name:     "test",
+				Bloblang: "this",
+			},
+		},
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, workflowPlugin)
+	_, err = workflowPlugin.ExecuteStep(context.Background(), "not-existent", emptyMessage())
+	assert.ErrorContains(t, err, "step not-existent not found")
+}

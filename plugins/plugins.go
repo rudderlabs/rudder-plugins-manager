@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/benthosdev/benthos/v4/public/bloblang"
-	"github.com/rudderlabs/rudder-plugins-manager/types"
+	"github.com/mitchellh/mapstructure"
 )
 
 /**
@@ -13,14 +13,14 @@ import (
  */
 type BasePlugin struct {
 	Name     string
-	Executor types.Executor
+	Executor Executor
 }
 
-func NewBasePlugin(name string, executor types.Executor) *BasePlugin {
+func NewBasePlugin(name string, executor Executor) *BasePlugin {
 	return &BasePlugin{Name: name, Executor: executor}
 }
 
-func (p *BasePlugin) Execute(ctx context.Context, data any) (any, error) {
+func (p *BasePlugin) Execute(ctx context.Context, data *Message) (*Message, error) {
 	return p.Executor.Execute(ctx, data)
 }
 
@@ -28,10 +28,10 @@ func (p *BasePlugin) GetName() string {
 	return p.Name
 }
 
-func NewTransformPlugin(name string, fn func(any) (any, error)) types.Plugin {
+func NewTransformPlugin(name string, fn func(*Message) (*Message, error)) Plugin {
 	return &BasePlugin{
 		Name:     name,
-		Executor: types.TransformFunc(fn),
+		Executor: TransformFunc(fn),
 	}
 }
 
@@ -51,8 +51,18 @@ func NewBloblangPlugin(name, template string) (*BloblangPlugin, error) {
 	return &BloblangPlugin{Name: name, executor: executor}, nil
 }
 
-func (p *BloblangPlugin) Execute(_ context.Context, input any) (any, error) {
-	return p.executor.Query(input)
+func (p *BloblangPlugin) Execute(_ context.Context, input *Message) (*Message, error) {
+	inputMap := input.ToMap()
+	data, err := p.executor.Query(inputMap)
+	if err != nil {
+		return nil, err
+	}
+	var result Message
+	err = mapstructure.Decode(data, &result)
+	if err != nil || (result.Metadata == nil && result.Data == nil) {
+		return NewMessage(data), nil
+	}
+	return &result, nil
 }
 
 func (p *BloblangPlugin) GetName() string {
@@ -60,22 +70,33 @@ func (p *BloblangPlugin) GetName() string {
 }
 
 type OrchestratorPlugin struct {
-	manager types.PluginManager
-	plugin  types.Plugin
+	manager PluginManager
+	plugin  Plugin
 }
 
-func NewOrchestratorPlugin(manager types.PluginManager, plugin types.Plugin) *OrchestratorPlugin {
+func NewOrchestratorPlugin(manager PluginManager, plugin Plugin) *OrchestratorPlugin {
 	return &OrchestratorPlugin{manager: manager, plugin: plugin}
 }
 
-func (p *OrchestratorPlugin) Execute(ctx context.Context, data any) (any, error) {
+func NextPluginMessage(nextPlugin string) *Message {
+	return &Message{
+		Metadata: map[string]any{
+			"next_plugin": nextPlugin,
+		},
+	}
+}
+
+func (p *OrchestratorPlugin) Execute(ctx context.Context, data *Message) (*Message, error) {
 	result, err := p.plugin.Execute(ctx, data)
 	if err != nil {
 		return nil, err
 	}
-	pluginName, ok := result.(string)
+	if result == nil {
+		return nil, nil
+	}
+	pluginName, ok := result.Metadata["next_plugin"].(string)
 	if !ok {
-		return nil, fmt.Errorf("plugin is not an orchestrator: result must be a string")
+		return nil, fmt.Errorf("failed to get next plugin name")
 	}
 	nextPlugin, err := p.manager.Get(pluginName)
 	if err != nil {

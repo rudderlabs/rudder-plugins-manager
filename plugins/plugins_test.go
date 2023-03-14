@@ -6,65 +6,73 @@ import (
 	"testing"
 
 	"github.com/rudderlabs/rudder-plugins-manager/plugins"
-	"github.com/rudderlabs/rudder-plugins-manager/types"
-	"github.com/rudderlabs/rudder-plugins-manager/utils"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
-var testPlugin = plugins.NewTransformPlugin("test", func(data any) (any, error) {
-	dataMap, ok := data.(map[string]any)
+var testPlugin = plugins.NewTransformPlugin("test", func(msg *plugins.Message) (*plugins.Message, error) {
+	dataMap, ok := msg.Data.(map[string]any)
 	if !ok {
 		return nil, errors.New("data is not a map")
 	}
 	dataMap["test"] = "test"
-	return dataMap, nil
+	return plugins.NewMessage(dataMap), nil
 })
 
-var bloblPlugin = utils.Must(plugins.NewBloblangPlugin("blobl", `root.secret = this.secret.encode("base64")`))
-
-var sampleStepPlugin = plugins.BaseStepPlugin{
-	Name: "sampleStepPlugin",
-	ConditionFunc: func(data plugins.StepInput) (bool, error) {
-		return true, nil
-	},
-	ExecuteFunc: func(ctx context.Context, input plugins.StepInput) (*plugins.StepOutput, error) {
-		return &plugins.StepOutput{
-			Output:  map[string]interface{}{"test": "test"},
-			Context: map[string]any{},
-		}, nil
-	},
+func emptyMessage() *plugins.Message {
+	return plugins.NewMessage(map[string]any{})
 }
 
-var sampleBloblangStepPlugin = utils.Must(plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-	Name:      "sampleBloblangStepPlugin",
-	Condition: utils.StringPtr(`this.data.test == "test"`),
-	Template:  `root.output.blobl = true`,
-}))
+func testMessage() *plugins.Message {
+	return plugins.NewMessage(map[string]any{"test": "test"})
+}
+
+func secretMessage() *plugins.Message {
+	return plugins.NewMessage(map[string]any{"secret": "secret"})
+}
+
+func secretEncodedMessage() *plugins.Message {
+	return plugins.NewMessage(map[string]any{"secret": "c2VjcmV0"})
+}
+
+var badPlugin = plugins.NewTransformPlugin("bad", func(msg *plugins.Message) (*plugins.Message, error) {
+	return nil, errors.New("bad plugin")
+})
+
+var bloblPlugin = lo.Must(plugins.NewBloblangPlugin("blobl", `root.secret = this.data.secret.encode("base64")`))
 
 func TestNewSimplePlugin(t *testing.T) {
-	data, err := testPlugin.Execute(context.Background(), map[string]any{})
+	data, err := testPlugin.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"test": "test"}, data)
+	assert.Equal(t, testMessage(), data)
 }
 
 func TestNewBasePlugin(t *testing.T) {
-	plugin := plugins.NewBasePlugin("test", types.ExecuteFunc(func(ctx context.Context, data any) (any, error) {
-		return data, nil
-	}))
+	plugin := plugins.NewBasePlugin("test",
+		plugins.ExecuteFunc(
+			func(ctx context.Context, data *plugins.Message) (*plugins.Message, error) {
+				return data, nil
+			},
+		),
+	)
 	assert.NotNil(t, plugin)
-	data, err := plugin.Execute(context.Background(), map[string]any{})
+	data, err := plugin.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{}, data)
+	assert.Equal(t, emptyMessage(), data)
 	assert.Equal(t, "test", plugin.GetName())
 }
 
 func TestNewSimpleBlobLPlugin(t *testing.T) {
-	data, err := bloblPlugin.Execute(context.Background(), map[string]any{
-		"secret": "secret",
-	})
+	data, err := bloblPlugin.Execute(context.Background(), secretMessage())
 
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"secret": "c2VjcmV0"}, data)
+	assert.Equal(t, secretEncodedMessage(), data)
+
+	plugin, err := plugins.NewBloblangPlugin("test", `root.data = "test"`)
+	assert.Nil(t, err)
+	data, err = plugin.Execute(context.Background(), emptyMessage())
+	assert.Nil(t, err)
+	assert.Equal(t, "test", data.Data)
 }
 
 func TestNewSimpleBlobLPluginFailureCase(t *testing.T) {
@@ -72,28 +80,19 @@ func TestNewSimpleBlobLPluginFailureCase(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, plugin)
 	assert.ErrorContains(t, err, "failed to parse bloblang template")
+
+	plugin, err = plugins.NewBloblangPlugin("test", `throw("some error")`)
+	assert.Nil(t, err)
+	_, err = plugin.Execute(context.Background(), emptyMessage())
+	assert.ErrorContains(t, err, "some error")
 }
 
 func TestNewSimpleBlobLPluginCondition(t *testing.T) {
-	plugin, err := plugins.NewBloblangPlugin("test", `this.test == "test"`)
+	plugin, err := plugins.NewBloblangPlugin("test", `this.data.test == "test"`)
 	assert.Nil(t, err)
-	data, err := plugin.Execute(context.Background(), map[string]any{
-		"test": "test",
-	})
-
+	data, err := plugin.Execute(context.Background(), testMessage())
 	assert.Nil(t, err)
-	assert.True(t, data.(bool))
-
-	plugin, err = plugins.NewBloblangPlugin("test", `this.data.test == "test"`)
-	assert.Nil(t, err)
-	stepInput := plugins.StepInput{
-		Data: map[string]any{
-			"test": "test",
-		},
-	}
-	data, err = plugin.Execute(context.Background(), stepInput.ToMap())
-	assert.Nil(t, err)
-	assert.True(t, data.(bool))
+	assert.True(t, data.Data.(bool))
 }
 
 func TestNewBasePluginManager(t *testing.T) {
@@ -107,205 +106,74 @@ func TestNewBasePluginManager(t *testing.T) {
 	assert.Nil(t, plugin)
 	assert.ErrorContains(t, err, "plugin not found")
 
-	result, err := manager.Execute(context.Background(), "test", map[string]any{})
+	result, err := manager.Execute(context.Background(), "test", emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"test": "test"}, result)
+	assert.Equal(t, testMessage(), result)
 
-	result, err = manager.Execute(context.Background(), "non-existing-plugin", map[string]any{})
+	result, err = manager.Execute(context.Background(), "non-existing-plugin", emptyMessage())
 	assert.NotNil(t, err)
 	assert.Nil(t, result)
 	assert.ErrorContains(t, err, "plugin not found")
 }
 
-func TestStepPlugin(t *testing.T) {
-	stepPlugin := plugins.BaseStepPlugin{Name: "stepPlugin"}
-	assert.Equal(t, stepPlugin.Name, stepPlugin.GetName())
-	shouldExecute, err := stepPlugin.ShouldExecute(plugins.StepInput{Data: map[string]any{}})
-	assert.Nil(t, err)
-	assert.Equal(t, true, shouldExecute)
-
-	data, err := stepPlugin.Execute(context.Background(), plugins.StepInput{Data: map[string]any{}})
-	assert.Nil(t, err)
-	assert.Nil(t, data)
-}
-
-func TestBloblangStepPlugin(t *testing.T) {
-	plugin, err := plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:     "bloblStepPlugin",
-		Template: `root.output.blobl = true`,
-	})
-	assert.Nil(t, err)
-	assert.NotNil(t, plugin)
-	assert.Equal(t, "bloblStepPlugin", plugin.GetName())
-	shouldExecute, err := plugin.ShouldExecute(plugins.StepInput{Data: map[string]any{}})
-	assert.Nil(t, err)
-	assert.Equal(t, true, shouldExecute)
-	data, err := plugin.Execute(context.Background(), plugins.StepInput{Data: map[string]any{}})
-	assert.Nil(t, err)
-	assert.Equal(t, &plugins.StepOutput{Output: map[string]any{"blobl": true}}, data)
-}
-
-func TestBloblangStepPluginFailureCases(t *testing.T) {
-	_, err := plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:      "bloblStepPlugin",
-		Condition: utils.StringPtr("bad condition"),
-		Template:  `root.output.blobl = true`,
-	})
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "failed to parse condition")
-
-	_, err = plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:     "bloblStepPlugin",
-		Template: `bad template`,
-	})
-
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "failed to parse template")
-
-	plugin, err := plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:      "bloblStepPlugin",
-		Condition: utils.StringPtr(`throw("error")`),
-		Template:  `throw("error")`,
-	})
-	assert.Nil(t, err)
-	_, err = plugin.ShouldExecute(plugins.StepInput{Data: map[string]any{}})
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "error")
-
-	plugin, err = plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:     "bloblStepPlugin",
-		Template: `throw("error")`,
-	})
-	assert.Nil(t, err)
-	_, err = plugin.Execute(context.Background(), plugins.StepInput{Data: map[string]any{}})
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "error")
-
-	plugin, err = plugins.NewBloblangStepPlugin(plugins.BloblangWorkflowStep{
-		Name:     "bloblStepPlugin",
-		Template: `root = "hello world"`,
-	})
-	assert.Nil(t, err)
-	_, err = plugin.Execute(context.Background(), plugins.StepInput{Data: map[string]any{}})
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "expected a map")
-}
-
-func TestWorkflowPlugin(t *testing.T) {
-	plugin := plugins.NewWorkflowPlugin("workflow", &sampleStepPlugin, sampleBloblangStepPlugin)
-	assert.NotNil(t, plugin)
-	assert.Equal(t, "workflow", plugin.GetName())
-	input := map[string]any{}
-	data, err := plugin.Execute(context.Background(), input)
-	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"blobl": true}, data)
-}
-
-func TestBloblangWorkflowPlugin(t *testing.T) {
-	plugin, err := plugins.NewBloblangWorkflowPlugin(&plugins.BloblangWorkflow{
-		Name: "workflow",
-		Steps: []plugins.BloblangWorkflowStep{
-			{
-				Name:      "step1",
-				Condition: utils.StringPtr(`this.data.test == "test"`),
-				Template:  `root.output.blobl = true`,
-			},
-		},
-	})
-	assert.Nil(t, err)
-	assert.NotNil(t, plugin)
-	assert.Equal(t, "workflow", plugin.GetName())
-	input := map[string]any{"test": "test"}
-	data, err := plugin.Execute(context.Background(), input)
-	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"blobl": true}, data)
-}
-
-func TestBloblangWorkflowPluginFailureCases(t *testing.T) {
-	plugin, err := plugins.NewBloblangWorkflowPlugin(&plugins.BloblangWorkflow{
-		Name: "workflow",
-		Steps: []plugins.BloblangWorkflowStep{
-			{
-				Name:     "step1",
-				Template: `bad template`,
-			},
-		},
-	})
-	assert.NotNil(t, err)
-	assert.Nil(t, plugin)
-	assert.ErrorContains(t, err, "failed to parse template")
-}
-
-func TestWorkflowPluginFailureCases(t *testing.T) {
-	badStepPlugin := plugins.BaseStepPlugin{Name: "badStepPlugin", ConditionFunc: func(data plugins.StepInput) (bool, error) {
-		return false, errors.New("error")
-	}}
-	workflowPlugin := plugins.NewWorkflowPlugin("workflow", &badStepPlugin)
-	input := map[string]any{}
-	data, err := workflowPlugin.Execute(context.Background(), input)
-	assert.NotNil(t, err)
-	assert.Nil(t, data)
-	assert.EqualError(t, err, "error")
-	badStepPlugin = plugins.BaseStepPlugin{Name: "badStepPlugin", ExecuteFunc: func(_ context.Context, data plugins.StepInput) (*plugins.StepOutput, error) {
-		return nil, errors.New("error")
-	}}
-	data, err = workflowPlugin.Execute(context.Background(), input)
-	assert.NotNil(t, err)
-	assert.Nil(t, data)
-	assert.EqualError(t, err, "error")
-}
-
 func TestOrchestratorPlugin(t *testing.T) {
 	manager := plugins.NewBasePluginManager()
-	identity := plugins.NewTransformPlugin("identity", func(data any) (any, error) {
+	identity := plugins.NewTransformPlugin("identity", func(data *plugins.Message) (*plugins.Message, error) {
 		return data, nil
 	})
 	manager.Add(identity)
-	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
-		return "identity", nil
-	})
+	orchestrator := plugins.NewTransformPlugin("orchestrator",
+		func(data *plugins.Message) (*plugins.Message, error) {
+			return plugins.NextPluginMessage("identity"), nil
+		},
+	)
 	pluginOrchestrator := plugins.NewOrchestratorPlugin(manager, orchestrator)
 	assert.NotNil(t, pluginOrchestrator)
-	data, err := pluginOrchestrator.Execute(context.Background(), map[string]any{})
+	data, err := pluginOrchestrator.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{}, data)
+	assert.Equal(t, plugins.NewMessage(map[string]any{}), data)
 }
 
 func TestPluginManagerAddOrchestrator(t *testing.T) {
 	manager := plugins.NewBasePluginManager()
 	manager.Add(testPlugin)
 	manager.Add(bloblPlugin)
-	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
-		dataMap, ok := data.(map[string]any)
+	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data *plugins.Message) (*plugins.Message, error) {
+		dataMap, ok := data.Data.(map[string]any)
 		if !ok {
 			return nil, errors.New("data is not a map")
 		}
-		if dataMap["testPlugin"] != nil {
-			return "test", nil
+		if dataMap["test"] != nil {
+			return plugins.NextPluginMessage("test"), nil
+		} else if dataMap["secret"] != nil {
+			return plugins.NextPluginMessage("blobl"), nil
 		}
-		return "blobl", nil
+		return nil, nil
 	})
 
 	manager.AddOrchestrator(orchestrator)
 	pluginOrchestrator, err := manager.Get("orchestrator")
 	assert.Nil(t, err)
-	data, err := pluginOrchestrator.Execute(context.Background(), map[string]any{"testPlugin": true})
+	data, err := pluginOrchestrator.Execute(context.Background(), testMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"test": "test", "testPlugin": true}, data)
-	data, err = pluginOrchestrator.Execute(context.Background(), map[string]any{"secret": "secret"})
+	assert.Equal(t, testMessage(), data)
+	data, err = pluginOrchestrator.Execute(context.Background(), secretMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"secret": "c2VjcmV0"}, data)
+	assert.Equal(t, secretEncodedMessage(), data)
+	data, err = pluginOrchestrator.Execute(context.Background(), emptyMessage())
+	assert.Nil(t, err)
+	assert.Nil(t, data)
 }
 
 func TestOrchestratorPluginFailureCases(t *testing.T) {
 	manager := plugins.NewBasePluginManager()
-	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data any) (any, error) {
-		dataMap, ok := data.(map[string]any)
+	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data *plugins.Message) (*plugins.Message, error) {
+		dataMap, ok := data.Data.(map[string]any)
 		if !ok {
 			return nil, errors.New("data is not a map")
 		}
 		if dataMap["test"] != nil {
-			return "test", nil
+			return plugins.NextPluginMessage("test"), nil
 		} else {
 			return nil, errors.New("invalid input")
 		}
@@ -314,12 +182,12 @@ func TestOrchestratorPluginFailureCases(t *testing.T) {
 	manager.AddOrchestrator(orchestrator)
 	pluginOrchestrator, err := manager.Get(orchestrator.GetName())
 	assert.Nil(t, err)
-	data, err := pluginOrchestrator.Execute(context.Background(), map[string]any{"test": "test"})
+	data, err := pluginOrchestrator.Execute(context.Background(), testMessage())
 	assert.NotNil(t, err)
 	assert.Nil(t, data)
 	assert.ErrorContains(t, err, "plugin not found")
 
-	data, err = pluginOrchestrator.Execute(context.Background(), map[string]any{})
+	data, err = pluginOrchestrator.Execute(context.Background(), emptyMessage())
 	assert.NotNil(t, err)
 	assert.Nil(t, data)
 	assert.ErrorContains(t, err, "invalid input")
@@ -327,8 +195,8 @@ func TestOrchestratorPluginFailureCases(t *testing.T) {
 	manager.AddOrchestrator(testPlugin)
 	pluginOrchestrator, err = manager.Get(testPlugin.GetName())
 	assert.Nil(t, err)
-	data, err = pluginOrchestrator.Execute(context.Background(), map[string]any{"test": "test"})
+	data, err = pluginOrchestrator.Execute(context.Background(), testMessage())
 	assert.NotNil(t, err)
 	assert.Nil(t, data)
-	assert.ErrorContains(t, err, "plugin is not an orchestrator")
+	assert.ErrorContains(t, err, "failed to get next plugin name")
 }
