@@ -16,7 +16,7 @@ type Message struct {
 func NewMessage(data any) *Message {
 	return &Message{
 		Data:     data,
-		Input:    data,
+		Input:    clone.Clone(data),
 		Metadata: make(map[string]any),
 	}
 }

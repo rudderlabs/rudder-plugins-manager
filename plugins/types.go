@@ -30,9 +30,9 @@ func (f TransformFunc) Execute(_ context.Context, data *Message) (*Message, erro
 	return f(data)
 }
 
-type PluginManager interface {
-	Get(name string) (Plugin, error)
-	Add(plugin Plugin)
+type Manager[T Plugin] interface {
+	Get(name string) (T, error)
+	Add(plugin T)
 	Execute(ctx context.Context, name string, data *Message) (*Message, error)
 }
 
@@ -81,3 +81,6 @@ func (c *StepConfig) GetType() StepType {
 	}
 	return UnknownStep
 }
+
+type PluginManager Manager[Plugin]
+type WorkflowManager Manager[WorkflowPlugin]

@@ -19,6 +19,19 @@ var testPlugin = plugins.NewTransformPlugin("test", func(msg *plugins.Message) (
 	return plugins.NewMessage(dataMap), nil
 })
 
+var orchestrator = plugins.NewTransformPlugin("orchestrator", func(data *plugins.Message) (*plugins.Message, error) {
+	dataMap, ok := data.Data.(map[string]any)
+	if !ok {
+		return nil, errors.New("data is not a map")
+	}
+	if dataMap["test"] != nil {
+		return plugins.NextPluginMessage("test"), nil
+	} else if dataMap["secret"] != nil {
+		return plugins.NextPluginMessage("blobl"), nil
+	}
+	return nil, nil
+})
+
 func emptyMessage() *plugins.Message {
 	return plugins.NewMessage(map[string]any{})
 }
@@ -138,18 +151,7 @@ func TestPluginManagerAddOrchestrator(t *testing.T) {
 	manager := plugins.NewBasePluginManager()
 	manager.Add(testPlugin)
 	manager.Add(bloblPlugin)
-	orchestrator := plugins.NewTransformPlugin("orchestrator", func(data *plugins.Message) (*plugins.Message, error) {
-		dataMap, ok := data.Data.(map[string]any)
-		if !ok {
-			return nil, errors.New("data is not a map")
-		}
-		if dataMap["test"] != nil {
-			return plugins.NextPluginMessage("test"), nil
-		} else if dataMap["secret"] != nil {
-			return plugins.NextPluginMessage("blobl"), nil
-		}
-		return nil, nil
-	})
+	
 
 	manager.AddOrchestrator(orchestrator)
 	pluginOrchestrator, err := manager.Get("orchestrator")
