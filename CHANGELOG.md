@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.2.2...v0.3.0) (2023-03-15)
+
+
+### Features
+
+* add retryable executors ([6f8b520](https://github.com/rudderlabs/rudder-plugins-manager/commit/6f8b520ae13183cd9ad2ddd056c1b2a199f3fabb))
+* use generics for base manager ([d61df0b](https://github.com/rudderlabs/rudder-plugins-manager/commit/d61df0b10607f2cd35c3ff153b4b6230d30f5e33))
+
+
+### Miscellaneous
+
+* message clone test case ([cfa5586](https://github.com/rudderlabs/rudder-plugins-manager/commit/cfa558641738e2ec5da3f56c754e78c2dee502ba))
+
 ## [0.2.2](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.2.0...v0.2.2) (2023-03-14)
 
 
