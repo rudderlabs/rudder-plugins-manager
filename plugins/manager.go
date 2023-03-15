@@ -2,15 +2,17 @@ package plugins
 
 import (
 	"context"
-	"errors"
+	"fmt"
 )
 
 type BaseManager[T Plugin] struct {
 	plugins map[string]T
+	Type    string
 }
 
-func NewBaseManager[T Plugin]() Manager[T] {
+func NewBaseManager[T Plugin](typeVal string) Manager[T] {
 	return &BaseManager[T]{
+		Type:    typeVal,
 		plugins: make(map[string]T),
 	}
 }
@@ -22,7 +24,7 @@ func (m *BaseManager[T]) Add(plugin T) {
 func (p *BaseManager[T]) Get(name string) (T, error) {
 	plugin, ok := p.plugins[name]
 	if !ok {
-		return plugin, errors.New("plugin not found")
+		return plugin, fmt.Errorf("%s %s not found", name, p.Type)
 	}
 	return plugin, nil
 }
@@ -41,7 +43,7 @@ type BasePluginManager struct {
 
 func NewBasePluginManager() *BasePluginManager {
 	return &BasePluginManager{
-		Manager: NewBaseManager[Plugin](),
+		Manager: NewBaseManager[Plugin]("plugin"),
 	}
 }
 
@@ -58,6 +60,6 @@ type BaseWorkflowManager struct {
 
 func NewBaseWorkflowManager() *BaseWorkflowManager {
 	return &BaseWorkflowManager{
-		Manager: NewBaseManager[WorkflowPlugin](),
+		Manager: NewBaseManager[WorkflowPlugin]("workflow"),
 	}
 }
