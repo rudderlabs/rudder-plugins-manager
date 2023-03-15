@@ -3,9 +3,11 @@ package plugins
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
+	"gopkg.in/yaml.v3"
 )
 
 type BaseStepPlugin struct {
@@ -214,4 +216,17 @@ func (p *BaseWorkflowPlugin) ExecuteStep(ctx context.Context, stepName string, d
 		return nil, err
 	}
 	return step.Execute(ctx, data)
+}
+
+func LoadWorkflowFile(workflowFile string) (*WorkflowConfig, error) {
+	var workflowConfig WorkflowConfig
+	workflowBytes, err := os.ReadFile(workflowFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read workflow file: %w", err)
+	}
+	err = yaml.Unmarshal(workflowBytes, &workflowConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal workflow file: %w", err)
+	}
+	return &workflowConfig, nil
 }

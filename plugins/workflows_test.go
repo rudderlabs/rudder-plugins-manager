@@ -2,13 +2,10 @@ package plugins_test
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/rudderlabs/rudder-plugins-manager/plugins"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 )
 
 func TestWorkflowEngine(t *testing.T) {
@@ -17,10 +14,10 @@ func TestWorkflowEngine(t *testing.T) {
 	pluginManager.Add(bloblPlugin)
 	pluginManager.Add(badPlugin)
 
-	var workflowConfig1 plugins.WorkflowConfig
-	err := yaml.Unmarshal(lo.Must(os.ReadFile("../test_data/workflows/workflow1.yaml")), &workflowConfig1)
+	workflowConfig1, err := plugins.LoadWorkflowFile("../test_data/workflows/workflow1.yaml")
 	assert.Nil(t, err)
-	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, workflowConfig1)
+	assert.NotNil(t, workflowConfig1)
+	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, *workflowConfig1)
 	assert.Nil(t, err)
 	assert.NotNil(t, workflowPlugin)
 	assert.Equal(t, workflowConfig1.Name, workflowPlugin.GetName())
@@ -277,4 +274,16 @@ func TestWorkflowExecuteStepFailureCases(t *testing.T) {
 	assert.NotNil(t, workflowPlugin)
 	_, err = workflowPlugin.ExecuteStep(context.Background(), "not-existent", emptyMessage())
 	assert.ErrorContains(t, err, "step not-existent not found")
+}
+
+func TestLoadWorkflowFileFailureCases(t *testing.T) {
+	workflow, err := plugins.LoadWorkflowFile("non-existent")
+	assert.Nil(t, workflow)
+	assert.NotNil(t, err)
+	assert.ErrorContains(t, err, "failed to read workflow file")
+
+	workflow, err = plugins.LoadWorkflowFile("workflows.go")
+	assert.Nil(t, workflow)
+	assert.NotNil(t, err)
+	assert.ErrorContains(t, err, "failed to unmarshal workflow file")
 }
