@@ -6,6 +6,7 @@ import (
 
 	"github.com/benthosdev/benthos/v4/public/bloblang"
 	"github.com/mitchellh/mapstructure"
+	"github.com/rs/zerolog/log"
 )
 
 /**
@@ -52,7 +53,9 @@ func NewBloblangPlugin(name, template string) (*BloblangPlugin, error) {
 }
 
 func (p *BloblangPlugin) Execute(_ context.Context, input *Message) (*Message, error) {
-	data, err := p.executor.Query(input.ToMap())
+	inputMap := input.ToMap()
+	log.Debug().Any("input", inputMap).Msg("Executing bloblang plugin")
+	data, err := p.executor.Query(inputMap)
 	if err != nil {
 		return nil, err
 	}
