@@ -14,15 +14,16 @@ type Message struct {
 }
 
 func NewMessage(data any) *Message {
-	return &Message{
+	msg := Message{
 		Data:     data,
-		Input:    clone.Slowly(data),
+		Input:    data,
 		Metadata: make(map[string]any),
 	}
+	return msg.Clone()
 }
 
 func (m *Message) Clone() *Message {
-	return clone.Clone(m).(*Message)
+	return clone.Slowly(m).(*Message)
 }
 
 func (m *Message) SetMetadata(key string, value any) {
