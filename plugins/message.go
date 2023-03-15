@@ -1,17 +1,17 @@
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/huandu/go-clone"
-	"github.com/mitchellh/mapstructure"
 )
 
 type Message struct {
-	Data any `mapstructure:"data"`
+	Data any `json:"data"`
 	// This will be used in workflows to store the original input message
-	Input    any            `mapstructure:"input"`
-	Metadata map[string]any `mapstructure:"metadata"`
+	Input    any            `json:"input"`
+	Metadata map[string]any `json:"metadata"`
 }
 
 func NewMessage(data any) *Message {
@@ -46,6 +46,7 @@ func (m *Message) GetBool() (bool, error) {
 
 func (m *Message) ToMap() map[string]interface{} {
 	var result map[string]interface{}
-	_ = mapstructure.Decode(m, &result)
+	mBytes, _ := json.Marshal(m)
+	json.Unmarshal(mBytes, &result)
 	return result
 }

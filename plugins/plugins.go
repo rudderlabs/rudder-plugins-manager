@@ -2,10 +2,10 @@ package plugins
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/benthosdev/benthos/v4/public/bloblang"
-	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog/log"
 )
 
@@ -60,7 +60,10 @@ func (p *BloblangPlugin) Execute(_ context.Context, input *Message) (*Message, e
 		return nil, err
 	}
 	var result Message
-	err = mapstructure.Decode(data, &result)
+	var dataBytes []byte
+	if dataBytes, err = json.Marshal(data); err == nil {
+		err = json.Unmarshal(dataBytes, &result)
+	}
 	if err != nil || (result.Metadata == nil && result.Data == nil) {
 		return NewMessage(data), nil
 	}

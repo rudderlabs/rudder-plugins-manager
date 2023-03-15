@@ -40,6 +40,19 @@ func testMessage() *plugins.Message {
 	return plugins.NewMessage(map[string]any{"test": "test"})
 }
 
+func complexMessage() *plugins.Message {
+	type linkedList struct {
+		Data int
+		Next *linkedList
+	}
+	return plugins.NewMessage(linkedList{
+		Data: 1,
+		Next: &linkedList{
+			Data: 1,
+		},
+	})
+}
+
 func secretMessage() *plugins.Message {
 	return plugins.NewMessage(map[string]any{"secret": "secret"})
 }
@@ -81,11 +94,21 @@ func TestNewSimpleBlobLPlugin(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, secretEncodedMessage(), data)
 
-	plugin, err := plugins.NewBloblangPlugin("test", `root.data = "test"`)
+	plugin, err := plugins.NewBloblangPlugin("test", `
+	root.data = this.data
+	root.data.test = "test"
+	`)
 	assert.Nil(t, err)
-	data, err = plugin.Execute(context.Background(), emptyMessage())
+	data, err = plugin.Execute(context.Background(), complexMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, "test", data.Data)
+	assert.Equal(t, map[string]any{
+		"Data": float64(1),
+		"Next": map[string]any{
+			"Data": float64(1),
+			"Next": nil,
+		},
+		"test": "test",
+	}, data.Data)
 }
 
 func TestNewSimpleBlobLPluginFailureCase(t *testing.T) {
