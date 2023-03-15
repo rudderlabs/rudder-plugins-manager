@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/huandu/go-clone"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Message struct {
@@ -44,9 +45,7 @@ func (m *Message) GetBool() (bool, error) {
 }
 
 func (m *Message) ToMap() map[string]interface{} {
-	return map[string]interface{}{
-		"data":     m.Data,
-		"input":    m.Input,
-		"metadata": m.Metadata,
-	}
+	var result map[string]interface{}
+	_ = mapstructure.Decode(m, &result)
+	return result
 }

@@ -52,8 +52,7 @@ func NewBloblangPlugin(name, template string) (*BloblangPlugin, error) {
 }
 
 func (p *BloblangPlugin) Execute(_ context.Context, input *Message) (*Message, error) {
-	inputMap := input.ToMap()
-	data, err := p.executor.Query(inputMap)
+	data, err := p.executor.Query(input.ToMap())
 	if err != nil {
 		return nil, err
 	}
