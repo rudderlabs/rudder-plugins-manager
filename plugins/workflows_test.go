@@ -45,6 +45,37 @@ func TestWorkflowEngine(t *testing.T) {
 	assert.Equal(t, map[string]any{"blobl": true}, result.Data)
 }
 
+func TestStepPlugin(t *testing.T) {
+	pluginsManager := plugins.NewBasePluginManager()
+	pluginsManager.Add(plugins.NewBasePlugin("test", newFailingExecutor("some error", 1)))
+
+	stepPlugin, err := plugins.NewBaseStepPlugin(pluginsManager, plugins.StepConfig{
+		Name:   "test",
+		Plugin: "test",
+		Retry: &plugins.BaseRetryPolicy{
+			RetryCount: 1,
+		},
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, stepPlugin)
+	assert.Equal(t, "test", stepPlugin.GetName())
+	assert.Equal(t, plugins.PluginStep, stepPlugin.GetType())
+	policy, ok := stepPlugin.GetRetryPolicy()
+	assert.True(t, ok)
+	assert.Equal(t, uint64(1), policy.GetRetryCount())
+	result, err := stepPlugin.Execute(context.Background(), emptyMessage())
+	assert.Nil(t, err)
+	assert.Equal(t, emptyMessage(), result)
+
+	stepPlugin, err = plugins.NewBaseStepPlugin(pluginsManager, plugins.StepConfig{
+		Name:   "test",
+		Plugin: "test",
+	})
+	assert.Nil(t, err)
+	_, ok = stepPlugin.GetRetryPolicy()
+	assert.False(t, ok)
+}
+
 func TestWorkflowInvalidConfig(t *testing.T) {
 	type errorTestCase struct {
 		workflowConfig plugins.WorkflowConfig

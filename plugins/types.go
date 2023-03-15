@@ -18,6 +18,16 @@ type Executor interface {
 	Execute(context.Context, *Message) (*Message, error)
 }
 
+type IsErrorRetryableFunc func(error) bool
+
+type RetryableExecutor interface {
+	Executor
+	GetRetryCount() int
+	IsErrorRetryable(error) bool
+}
+
+var AllErrorsRetryable IsErrorRetryableFunc = func(error) bool { return true }
+
 type ExecuteFunc func(context.Context, *Message) (*Message, error)
 
 func (f ExecuteFunc) Execute(ctx context.Context, data *Message) (*Message, error) {
@@ -44,12 +54,18 @@ const (
 	UnknownStep  StepType = "unknown"
 )
 
+type RetryPolicy interface {
+	IsErrorRetryable(error) bool
+	GetRetryCount() uint64
+}
+
 type StepPlugin interface {
 	Plugin
 	GetType() StepType
 	ShouldExecute(*Message) (bool, error)
 	ShouldReturn() bool
 	ShouldContinue() bool
+	GetRetryPolicy() (RetryPolicy, bool)
 }
 
 type WorkflowPlugin interface {
@@ -65,12 +81,13 @@ type WorkflowConfig struct {
 }
 
 type StepConfig struct {
-	Name     string `json:"name" yaml:"name"`
-	Check    string `json:"check" yaml:"check"`
-	Return   bool   `json:"return" yaml:"return"`
-	Continue bool   `json:"continue" yaml:"continue"`
-	Plugin   string `json:"plugin" yaml:"plugin"`
-	Bloblang string `json:"bloblang" yaml:"bloblang"`
+	Name     string           `json:"name" yaml:"name"`
+	Check    string           `json:"check" yaml:"check"`
+	Return   bool             `json:"return" yaml:"return"`
+	Continue bool             `json:"continue" yaml:"continue"`
+	Plugin   string           `json:"plugin" yaml:"plugin"`
+	Bloblang string           `json:"bloblang" yaml:"bloblang"`
+	Retry    *BaseRetryPolicy `json:"retry" yaml:"retry"`
 }
 
 func (c *StepConfig) GetType() StepType {
@@ -82,5 +99,7 @@ func (c *StepConfig) GetType() StepType {
 	return UnknownStep
 }
 
-type PluginManager Manager[Plugin]
-type WorkflowManager Manager[WorkflowPlugin]
+type (
+	PluginManager   Manager[Plugin]
+	WorkflowManager Manager[WorkflowPlugin]
+)

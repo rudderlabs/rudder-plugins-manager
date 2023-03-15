@@ -43,5 +43,5 @@ func TestWorkflowManager(t *testing.T) {
 
 	data, err := manager.Execute(context.Background(), "test", emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"test":"test"}, data.Data)
+	assert.Equal(t, map[string]any{"test": "test"}, data.Data)
 }

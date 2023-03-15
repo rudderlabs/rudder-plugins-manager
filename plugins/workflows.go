@@ -9,12 +9,13 @@ import (
 )
 
 type BaseStepPlugin struct {
-	Name     string
-	Type     StepType
-	Check    Executor
-	Main     Executor
-	Continue bool
-	Return   bool
+	Name        string
+	Type        StepType
+	Check       Executor
+	Main        Executor
+	Continue    bool
+	Return      bool
+	RetryPolicy RetryPolicy
 }
 
 func validateStepConfig(config *StepConfig, pluginManager PluginManager) error {
@@ -36,6 +37,19 @@ func validateStepConfig(config *StepConfig, pluginManager PluginManager) error {
 	return nil
 }
 
+func getMainStepExecutor(config *StepConfig, pluginManager PluginManager) (Executor, error) {
+	switch config.GetType() {
+	case BloblangStep:
+		return NewBloblangPlugin(config.Name, config.Bloblang)
+	default:
+		plugin, err := pluginManager.Get(config.Plugin)
+		if err != nil {
+			return nil, err
+		}
+		return plugin, nil
+	}
+}
+
 func NewBaseStepPlugin(pluginManager PluginManager, config StepConfig) (StepPlugin, error) {
 	err := validateStepConfig(&config, pluginManager)
 	if err != nil {
@@ -49,19 +63,14 @@ func NewBaseStepPlugin(pluginManager PluginManager, config StepConfig) (StepPlug
 
 	stepPlugin.Type = config.GetType()
 
-	switch stepPlugin.Type {
-	case BloblangStep:
-		executor, err := NewBloblangPlugin(config.Name, config.Bloblang)
-		if err != nil {
-			return nil, err
-		}
-		stepPlugin.Main = executor
-	default:
-		plugin, err := pluginManager.Get(config.Plugin)
-		if err != nil {
-			return nil, err
-		}
-		stepPlugin.Main = plugin
+	stepPlugin.Main, err = getMainStepExecutor(&config, pluginManager)
+	if err != nil {
+		return nil, err
+	}
+
+	if config.Retry != nil {
+		stepPlugin.RetryPolicy = config.Retry
+		stepPlugin.Main = NewBaseRetryableExecutor(stepPlugin.Main, stepPlugin.RetryPolicy)
 	}
 
 	if config.Check != "" {
@@ -103,6 +112,13 @@ func (p *BaseStepPlugin) GetName() string {
 
 func (p *BaseStepPlugin) Execute(ctx context.Context, data *Message) (*Message, error) {
 	return p.Main.Execute(ctx, data)
+}
+
+func (p *BaseStepPlugin) GetRetryPolicy() (RetryPolicy, bool) {
+	if p.RetryPolicy == nil {
+		return nil, false
+	}
+	return p.RetryPolicy, true
 }
 
 type BaseWorkflowPlugin struct {

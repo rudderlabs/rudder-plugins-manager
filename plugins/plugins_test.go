@@ -151,7 +151,6 @@ func TestPluginManagerAddOrchestrator(t *testing.T) {
 	manager := plugins.NewBasePluginManager()
 	manager.Add(testPlugin)
 	manager.Add(bloblPlugin)
-	
 
 	manager.AddOrchestrator(orchestrator)
 	pluginOrchestrator, err := manager.Get("orchestrator")
