@@ -167,6 +167,7 @@ func (p *BaseWorkflowPlugin) GetName() string {
 }
 
 func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
+	log.Debug().Str("workflow", p.Name).Any("input", input).Msg("executing workflow")
 	newInput := input.Clone()
 	for _, step := range p.Steps {
 		shouldExecute, err := step.ShouldExecute(newInput)
