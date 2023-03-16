@@ -21,18 +21,41 @@
 
 ## Rudder Plugins Manager
 
-Provides interfaces to write plugins and also provides useful and generic plugins for general usage.
+Plugins, Workflows and Managers
 ## Overview
 
-\*\*Describe what the software does.\*\*
+Provides managers, interfaces and types to write generic plugins and workflows.
 
 ## Features
 
-\*\*Describe the key features, if necessary.\*\*
+* Generics [Plugin Interfaces](./plugins/types.go)
+* Useful Plugins to get started
+ * [Base Plugin](./plugins/base.go)
+ * [Bloblang Plugin](./plugins/bloblang.go) (using [bloblang](https://www.benthos.dev/docs/guides/bloblang/about))
+ * [Workflow Plugin](./plugins/workflow.go)
+ * [Retryable Plugin](./plugins/retryable.go)
+ * [Orchestrator Plugin](./plugins/orchestrator.go)
+* Managers
+  * [Plugin Manager](./plugins/manager.go)
+  * [Workflow Manager](./plugins/manager.go)
 
 ## Getting started
 
-\*\*Describe how to use the software.\*\*
+```bash
+go get github.com/rudderlabs/rudder-plugins-manager
+
+```
+
+## Examples
+* [Base Plugin](./plugins/base_test.go)
+* [Bloblang Plugin](./plugins/bloblang_test.go)
+* [Workflow Plugin](./plugins/workflow_test.go)
+ * [Sample Workflow](./test_data/workflows/sample.yaml)
+* [Retryable Plugin](./plugins/retryable_test.go)
+* [Orchestrator Plugin](./plugins/orchestrator_test.go)
+* Managers
+* [Plugin Manager](./plugins/manager_test.go)
+* [Workflow Manager](./plugins/manager_test.go)
 
 ## Contribute
 

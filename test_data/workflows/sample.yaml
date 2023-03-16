@@ -1,4 +1,4 @@
-name: workflow1
+name: sample
 steps:
   - name: test
     check: this.data.test == "test"

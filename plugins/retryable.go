@@ -30,13 +30,13 @@ func (r *BaseRetryPolicy) GetRetryCount() uint64 {
 
 type BaseRetryableExecutor struct {
 	Executor
-	policy RetryPolicy
+	Policy RetryPolicy
 }
 
 func NewBaseRetryableExecutorFromFunc(executor Executor, retryCount uint64, IsErrorRetryable IsErrorRetryableFunc) *BaseRetryableExecutor {
 	return &BaseRetryableExecutor{
 		Executor: executor,
-		policy: &BaseRetryPolicy{
+		Policy: &BaseRetryPolicy{
 			RetryCount:           retryCount,
 			IsErrorRetryableFunc: IsErrorRetryable,
 		},
@@ -49,7 +49,7 @@ func NewBaseRetryableExecutor(executor Executor, policy RetryPolicy) Executor {
 	}
 	return &BaseRetryableExecutor{
 		Executor: executor,
-		policy:   policy,
+		Policy:   policy,
 	}
 }
 
@@ -58,12 +58,26 @@ func (e *BaseRetryableExecutor) Execute(ctx context.Context, data *Message) (*Me
 		func() (*Message, error) {
 			result, err := e.Executor.Execute(ctx, data)
 			if err != nil {
-				if !e.policy.IsErrorRetryable(err) {
+				if !e.Policy.IsErrorRetryable(err) {
 					err = backoff.Permanent(err)
 				}
 				return nil, err
 			}
 			return result, nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), e.policy.GetRetryCount()))
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), e.Policy.GetRetryCount()))
+}
+
+func NewBaseRetryablePlugin(plugin Plugin, policy RetryPolicy) Plugin {
+	return &BasePlugin{
+		Name:     plugin.GetName(),
+		Executor: NewBaseRetryableExecutor(plugin, policy),
+	}
+}
+
+func NewBasePluginWithRetryPolicy(name string, executor Executor, policy RetryPolicy) Plugin {
+	return &BasePlugin{
+		Name:     name,
+		Executor: NewBaseRetryableExecutor(executor, policy),
+	}
 }
