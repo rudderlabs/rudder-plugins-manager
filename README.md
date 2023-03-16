@@ -20,7 +20,19 @@
 ---
 
 ## Rudder Plugins Manager
-We process different customer events and then send them to 200+ destinations. We need to write custom code specific to the customer events. This library helps to implement such requirements as plugins or workflows.
+We process different customer events and then send them to 200+ destinations. We need to write custom code specific to the customer events. This library helps to implement such requirements as plugins or workflows. This is designed as per our needs but we believe this is a general tool for defining any custom data pipelines.
+
+### Use cases
+* Alert Management
+  * Different type of alerts may need to be enriched differently
+  * Based on context of the alert, alert may need to be routed to different destinations.
+* Customer Notifications
+  * Similar to alert management, different notifications require different processing.
+* Data pipelines
+  * If you receive from or deliver to multiple third-party services then this can be used to standardize the incoming event and then do common processing and then again customize outgoing events as per different services API contracts.
+* General automation
+  * Database cleanup workflows
+  * Report generation workflows.
 
 ## Features
 

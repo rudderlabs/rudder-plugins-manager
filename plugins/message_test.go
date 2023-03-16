@@ -15,8 +15,7 @@ func TestMessageClone(t *testing.T) {
 }
 
 func TestMessageMetadata(t *testing.T) {
-	testMsg := testMessage()
-	testMsg.SetMetadata("test", "test")
+	testMsg := testMessage().WithMetadata("test", "test")
 	value, ok := testMsg.GetMetadata("test")
 	assert.True(t, ok)
 	assert.Equal(t, "test", value)

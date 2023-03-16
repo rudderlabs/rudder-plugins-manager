@@ -28,6 +28,11 @@ func (m *Message) Clone() *Message {
 	return clone.Slowly(m).(*Message)
 }
 
+func (m *Message) WithMetadata(key string, value any) *Message {
+	m.Metadata[key] = value
+	return m
+}
+
 func (m *Message) SetMetadata(key string, value any) {
 	m.Metadata[key] = value
 }
