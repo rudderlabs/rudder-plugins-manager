@@ -20,8 +20,7 @@
 ---
 
 ## Rudder Plugins Manager
-
-Sometimes we want to write custom code specific to some user event and we should write it as a plugin so that the core logic is clean. This library helps write such plugins and workflows. It also helps to manage them using the Managers.
+We process different customer events and then send them to 200+ destinations. We need to write custom code specific to the customer events. This library helps to implement such requirements as plugins or workflows.
 
 ## Features
 
