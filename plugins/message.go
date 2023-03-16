@@ -5,6 +5,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/huandu/go-clone"
+	"github.com/samber/lo"
 )
 
 type Message struct {
@@ -46,7 +47,6 @@ func (m *Message) GetBool() (bool, error) {
 
 func (m *Message) ToMap() map[string]interface{} {
 	var result map[string]interface{}
-	mBytes, _ := json.Marshal(m)
-	json.Unmarshal(mBytes, &result)
+	lo.Must0(json.Unmarshal(lo.Must(json.Marshal(m)), &result))
 	return result
 }

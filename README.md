@@ -54,8 +54,8 @@ go get github.com/rudderlabs/rudder-plugins-manager
 * [Retryable Plugin](./plugins/retryable_test.go)
 * [Orchestrator Plugin](./plugins/orchestrator_test.go)
 * Managers
-* [Plugin Manager](./plugins/manager_test.go)
-* [Workflow Manager](./plugins/manager_test.go)
+  * [Plugin Manager](./plugins/manager_test.go)
+  * [Workflow Manager](./plugins/manager_test.go)
 
 ## Contribute
 
@@ -63,4 +63,4 @@ We would love to see you contribute to RudderStack. Get more information on how 
 
 ## License
 
-The RudderStack \*\*software name\*\* is released under the [**MIT License**](https://opensource.org/licenses/MIT).
+The RudderStack Plugins Manager is released under the [**MIT License**](https://opensource.org/licenses/MIT).
