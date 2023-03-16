@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.3.0...v0.4.0) (2023-03-16)
+
+
+### Features
+
+* add load workflow file util function ([56a8810](https://github.com/rudderlabs/rudder-plugins-manager/commit/56a8810378156842deb9298ba9e4985b8a2b4cec))
+
+
+### Bug Fixes
+
+* lint issue in message.go ([479802c](https://github.com/rudderlabs/rudder-plugins-manager/commit/479802c9c1acbb7a54644b23163cf1c9e5db76ee))
+
+
+### Miscellaneous
+
+* add log message ([23e47b4](https://github.com/rudderlabs/rudder-plugins-manager/commit/23e47b49965cd81e9f6a466ba4cb837aac31e3bb))
+* bloblang plugin ([0a77cb7](https://github.com/rudderlabs/rudder-plugins-manager/commit/0a77cb730f4b3f32c0eaaeb32af502f3d013b9e8))
+* manager ([9c6274e](https://github.com/rudderlabs/rudder-plugins-manager/commit/9c6274ef63b9bd638503d079defa0951e5d6f47d))
+* message cloning ([c778b6e](https://github.com/rudderlabs/rudder-plugins-manager/commit/c778b6e9414fa740f07ffc3242762e1d6dde901f))
+* message to map function ([84b3d18](https://github.com/rudderlabs/rudder-plugins-manager/commit/84b3d1876528cb0b5176a13cdc5dfaca08aa94d6))
+* message to map function ([bba8347](https://github.com/rudderlabs/rudder-plugins-manager/commit/bba834792fa12246e37ed24c42f561c5046ce429))
+* split into individual files ([24de94b](https://github.com/rudderlabs/rudder-plugins-manager/commit/24de94b7317ba0b36cb96fd6961843fb2aa78273))
+
 ## [0.3.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.2.2...v0.3.0) (2023-03-15)
 
 
