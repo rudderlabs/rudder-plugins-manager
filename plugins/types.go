@@ -9,13 +9,13 @@ import (
  * The interface is used by the plugin manager to load and use plugins.
  */
 
-type Plugin interface {
-	GetName() string
+type Executor interface {
 	Execute(context.Context, *Message) (*Message, error)
 }
 
-type Executor interface {
-	Execute(context.Context, *Message) (*Message, error)
+type Plugin interface {
+	Executor
+	GetName() string
 }
 
 type IsErrorRetryableFunc func(error) bool
@@ -41,8 +41,12 @@ func (f TransformFunc) Execute(_ context.Context, data *Message) (*Message, erro
 }
 
 type Manager[T Plugin] interface {
+	ExecutionManager
 	Get(name string) (T, error)
 	Add(plugin T)
+}
+
+type ExecutionManager interface {
 	Execute(ctx context.Context, name string, data *Message) (*Message, error)
 }
 
