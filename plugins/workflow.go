@@ -10,6 +10,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	WorkflowOutputsKey        = "outputs"
+	LastCompletedStepIndexKey = "last_completed_step"
+	VersionKey                = "version"
+)
+
 type BaseStepPlugin struct {
 	Name        string
 	Type        StepType
@@ -124,8 +130,9 @@ func (p *BaseStepPlugin) GetRetryPolicy() (RetryPolicy, bool) {
 }
 
 type BaseWorkflowPlugin struct {
-	Name  string
-	Steps []StepPlugin
+	Name    string
+	Version int
+	Steps   []StepPlugin
 }
 
 func validateWorkflowConfig(config *WorkflowConfig) error {
@@ -159,40 +166,74 @@ func NewBaseWorkflowPlugin(pluginManager PluginManager, config WorkflowConfig) (
 		}
 	}
 
-	return &BaseWorkflowPlugin{Name: config.Name, Steps: steps}, nil
+	return &BaseWorkflowPlugin{Name: config.Name, Version: config.Version, Steps: steps}, nil
 }
 
 func (p *BaseWorkflowPlugin) GetName() string {
 	return p.Name
 }
 
-func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
-	log.Debug().Str("workflow", p.Name).Msg("Execution is started")
+func (p *BaseWorkflowPlugin) GetVersion() int {
+	return p.Version
+}
+
+func executeWorkflowStep(ctx context.Context, step StepPlugin, data *Message) (*Message, error) {
+	shouldExecute, err := step.ShouldExecute(data)
+	if err != nil {
+		if step.ShouldContinue() {
+			log.Warn().Err(err).Msg("failed to check step")
+			return nil, nil
+		}
+		return nil, err
+	}
+	if !shouldExecute {
+		return nil, nil
+	}
+
+	output, err := step.Execute(ctx, data)
+	if err != nil {
+		if step.ShouldContinue() {
+			log.Warn().Err(err).Msg("failed to execute step")
+			return nil, nil
+		}
+		return nil, err
+	}
+	return output, nil
+}
+
+func initWorkflowMessage(workflow WorkflowPlugin, input *Message) *Message {
 	newInput := input.Clone()
-	for _, step := range p.Steps {
-		shouldExecute, err := step.ShouldExecute(newInput)
+	version, ok := newInput.GetMetadata(VersionKey)
+	if !ok || version.(int) != workflow.GetVersion() {
+		newInput.SetMetadata(VersionKey, workflow.GetVersion())
+		newInput.SetMetadata(WorkflowOutputsKey, map[string]any{})
+		newInput.SetMetadata(LastCompletedStepIndexKey, -1)
+	}
+	return newInput
+}
+
+func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
+	newInput := initWorkflowMessage(p, input)
+	startIdx := newInput.Metadata[LastCompletedStepIndexKey].(int) + 1
+	if startIdx >= len(p.Steps) {
+		return newInput, nil
+	}
+	steps := p.Steps[startIdx:]
+	log.Debug().Str("workflow", p.Name).Int("startIdx", startIdx).Msg("Execution is started")
+	for idx, step := range steps {
+		output, err := executeWorkflowStep(ctx, step, newInput)
 		if err != nil {
-			if step.ShouldContinue() {
-				log.Warn().Err(err).Msg("failed to check step")
-				continue
-			}
 			return nil, err
 		}
-		if shouldExecute {
-			output, err := step.Execute(ctx, newInput)
-			if err != nil {
-				if step.ShouldContinue() {
-					log.Warn().Err(err).Msg("failed to execute step")
-					continue
-				}
-				return nil, err
-			}
-
-			newInput.Data = output.Data
-			newInput.Metadata = lo.Assign(newInput.Metadata, output.Metadata)
-			if step.ShouldReturn() {
-				return newInput, nil
-			}
+		newInput.SetMetadata(LastCompletedStepIndexKey, idx)
+		if output == nil {
+			continue
+		}
+		newInput.Data = output.Data
+		newInput.Metadata = lo.Assign(newInput.Metadata, output.Metadata)
+		newInput.Metadata[WorkflowOutputsKey].(map[string]any)[step.GetName()] = output.Data
+		if step.ShouldReturn() {
+			return newInput, nil
 		}
 	}
 	log.Debug().Str("workflow", p.Name).Msg("Execution is successful")

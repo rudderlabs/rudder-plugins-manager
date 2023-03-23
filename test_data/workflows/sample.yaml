@@ -1,4 +1,5 @@
 name: sample
+version: 1
 steps:
   - name: test
     check: this.data.test == "test"
@@ -14,7 +15,10 @@ steps:
     plugin: bad
     continue: true
 
-  - name: blobl
+  - name: blobl1
     bloblang: |
-      root = this.data
-      root.blobl = true
+      root = "Hello"
+
+  - name: blobl2
+    bloblang: |
+      root.data = this.metadata.outputs.blobl1 + " World!!"
