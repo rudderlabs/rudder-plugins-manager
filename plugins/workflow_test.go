@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const someError = "some error"
+
 func TestWorkflowEngine(t *testing.T) {
 	pluginManager := plugins.NewBasePluginManager()
 	pluginManager.Add(testPlugin)
@@ -21,17 +23,17 @@ func TestWorkflowEngine(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, workflowPlugin)
 	assert.Equal(t, sampleWorkflowConfig.Name, workflowPlugin.GetName())
-	bloblStep, err := workflowPlugin.GetStep("blobl")
+	bloblStep, err := workflowPlugin.GetStep("blobl1")
 	assert.Nil(t, err)
 	assert.NotNil(t, bloblStep)
-	assert.Equal(t, "blobl", bloblStep.GetName())
+	assert.Equal(t, "blobl1", bloblStep.GetName())
 	assert.Equal(t, plugins.BloblangStep, bloblStep.GetType())
 	steps := workflowPlugin.GetSteps()
 	assert.Equal(t, len(sampleWorkflowConfig.Steps), len(steps))
 
-	result, err := workflowPlugin.ExecuteStep(context.Background(), "blobl", emptyMessage())
+	result, err := workflowPlugin.ExecuteStep(context.Background(), "blobl1", emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"blobl": true}, result.Data)
+	assert.Equal(t, "Hello", result.Data)
 
 	result, err = workflowPlugin.Execute(context.Background(), testMessage())
 	assert.Nil(t, err)
@@ -39,12 +41,12 @@ func TestWorkflowEngine(t *testing.T) {
 
 	result, err = workflowPlugin.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]any{"blobl": true}, result.Data)
+	assert.Equal(t, "Hello World!!", result.Data)
 }
 
 func TestStepPlugin(t *testing.T) {
 	pluginsManager := plugins.NewBasePluginManager()
-	pluginsManager.Add(plugins.NewBasePlugin("test", newFailingExecutor("some error", 1)))
+	pluginsManager.Add(plugins.NewBasePlugin("test", newFailingExecutor(someError, 1)))
 
 	stepPlugin, err := plugins.NewBaseStepPlugin(pluginsManager, plugins.StepConfig{
 		Name:   "test",
@@ -216,7 +218,7 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 					},
 				},
 			},
-			expectedError: "some error",
+			expectedError: someError,
 		},
 		{
 			workflowConfig: plugins.WorkflowConfig{
@@ -229,7 +231,7 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 					},
 				},
 			},
-			expectedError: "some error",
+			expectedError: someError,
 		},
 	}
 	for _, testCase := range testCases {

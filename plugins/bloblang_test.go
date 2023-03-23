@@ -43,7 +43,7 @@ func TestNewSimpleBlobLPluginFailureCase(t *testing.T) {
 	plugin, err = plugins.NewBloblangPlugin("test", `throw("some error")`)
 	assert.Nil(t, err)
 	_, err = plugin.Execute(context.Background(), emptyMessage())
-	assert.ErrorContains(t, err, "some error")
+	assert.ErrorContains(t, err, someError)
 }
 
 func TestNewSimpleBlobLPluginCondition(t *testing.T) {

@@ -169,6 +169,7 @@ func (p *BaseWorkflowPlugin) GetName() string {
 func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
 	log.Debug().Str("workflow", p.Name).Msg("Execution is started")
 	newInput := input.Clone()
+	newInput.SetMetadata("outputs", map[string]any{})
 	for _, step := range p.Steps {
 		shouldExecute, err := step.ShouldExecute(newInput)
 		if err != nil {
@@ -178,21 +179,23 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 			}
 			return nil, err
 		}
-		if shouldExecute {
-			output, err := step.Execute(ctx, newInput)
-			if err != nil {
-				if step.ShouldContinue() {
-					log.Warn().Err(err).Msg("failed to execute step")
-					continue
-				}
-				return nil, err
+		if !shouldExecute {
+			continue
+		}
+		output, err := step.Execute(ctx, newInput)
+		if err != nil {
+			if step.ShouldContinue() {
+				log.Warn().Err(err).Msg("failed to execute step")
+				continue
 			}
+			return nil, err
+		}
 
-			newInput.Data = output.Data
-			newInput.Metadata = lo.Assign(newInput.Metadata, output.Metadata)
-			if step.ShouldReturn() {
-				return newInput, nil
-			}
+		newInput.Data = output.Data
+		newInput.Metadata = lo.Assign(newInput.Metadata, output.Metadata)
+		newInput.Metadata["outputs"].(map[string]any)[step.GetName()] = output.Data
+		if step.ShouldReturn() {
+			return newInput, nil
 		}
 	}
 	log.Debug().Str("workflow", p.Name).Msg("Execution is successful")
