@@ -10,16 +10,22 @@ import (
 
 const someError = "some error"
 
-func TestWorkflowEngine(t *testing.T) {
+func createSampleWorkflow() (*plugins.WorkflowConfig, plugins.WorkflowPlugin, error) {
 	pluginManager := plugins.NewBasePluginManager()
 	pluginManager.Add(testPlugin)
 	pluginManager.Add(bloblPlugin)
 	pluginManager.Add(badPlugin)
 
 	sampleWorkflowConfig, err := plugins.LoadWorkflowFile("../test_data/workflows/sample.yaml")
-	assert.Nil(t, err)
-	assert.NotNil(t, sampleWorkflowConfig)
+	if err != nil {
+		return nil, nil, err
+	}
 	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, *sampleWorkflowConfig)
+	return sampleWorkflowConfig, workflowPlugin, err
+}
+
+func TestWorkflowEngine(t *testing.T) {
+	sampleWorkflowConfig, workflowPlugin, err := createSampleWorkflow()
 	assert.Nil(t, err)
 	assert.NotNil(t, workflowPlugin)
 	assert.Equal(t, sampleWorkflowConfig.Name, workflowPlugin.GetName())
@@ -42,6 +48,36 @@ func TestWorkflowEngine(t *testing.T) {
 	result, err = workflowPlugin.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
 	assert.Equal(t, "Hello World!!", result.Data)
+}
+
+func TestWorkflowEngineReplay(t *testing.T) {
+	workflowConfig, workflowPlugin, err := createSampleWorkflow()
+	assert.Nil(t, err)
+	input := emptyMessage()
+	input.SetMetadata(plugins.VersionKey, workflowConfig.Version)
+	input.SetMetadata(plugins.LastCompletedStepIndexKey, 3)
+	input.SetMetadata(plugins.WorkflowOutputsKey, map[string]any{"blobl1": "Hello"})
+	result, err := workflowPlugin.Execute(context.Background(), input)
+	assert.Nil(t, err)
+	assert.Equal(t, "Hello World!!", result.Data)
+
+	input.SetMetadata(plugins.LastCompletedStepIndexKey, 4)
+	result, err = workflowPlugin.Execute(context.Background(), input)
+	assert.Nil(t, err)
+	// No step will be executed as the last completed step index is
+	// greater than or equals last workflow step index
+	assert.Equal(t, input.Data, result.Data)
+
+	input = testMessage()
+	// Set version to previous version to test replay
+	// Now the last completed step index will be reset to 0
+	// Workflow will be executed from the beginning
+	input.SetMetadata(plugins.VersionKey, workflowConfig.Version-1)
+	input.SetMetadata(plugins.LastCompletedStepIndexKey, 3)
+	result, err = workflowPlugin.Execute(context.Background(), input)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]any{"test": "test"}, result.Data)
+	assert.Equal(t, workflowConfig.Version, result.Metadata[plugins.VersionKey])
 }
 
 func TestStepPlugin(t *testing.T) {

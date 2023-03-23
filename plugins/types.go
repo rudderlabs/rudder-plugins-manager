@@ -74,14 +74,16 @@ type StepPlugin interface {
 
 type WorkflowPlugin interface {
 	Plugin
+	GetVersion() int
 	GetSteps() []StepPlugin
 	GetStep(name string) (StepPlugin, error)
 	ExecuteStep(ctx context.Context, stepName string, data *Message) (*Message, error)
 }
 
 type WorkflowConfig struct {
-	Name  string       `json:"name" yaml:"name"`
-	Steps []StepConfig `json:"steps" yaml:"steps"`
+	Name    string       `json:"name" yaml:"name"`
+	Version int          `json:"version" yaml:"version"`
+	Steps   []StepConfig `json:"steps" yaml:"steps"`
 }
 
 type StepConfig struct {
