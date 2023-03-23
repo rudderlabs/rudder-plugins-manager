@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.4.0...v0.5.0) (2023-03-23)
+
+
+### Features
+
+* add support for reply of workflows ([f28f9ff](https://github.com/rudderlabs/rudder-plugins-manager/commit/f28f9ffb7bd4372b753f5ce55ac3cf7199dd3021))
+* add support for step outputs ([6fa3a6c](https://github.com/rudderlabs/rudder-plugins-manager/commit/6fa3a6cfb4cd2295225abbefe1f3e171f2f56bcc))
+
+
+### Miscellaneous
+
+* add execution manager interface ([e55f01e](https://github.com/rudderlabs/rudder-plugins-manager/commit/e55f01efad9e8899593ec28ebbbcb66a64cec0d8))
+* message ([2b8e27c](https://github.com/rudderlabs/rudder-plugins-manager/commit/2b8e27cdd32cc594d7c339437343a60ee946766c))
+* update readme ([688b54d](https://github.com/rudderlabs/rudder-plugins-manager/commit/688b54d11032d3dbf929544edb8b6ccce364666f))
+* update readme with examples ([1374c2b](https://github.com/rudderlabs/rudder-plugins-manager/commit/1374c2b3697ea0e320c632b43905d55537e618f7))
+
 ## [0.4.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.3.0...v0.4.0) (2023-03-16)
 
 
