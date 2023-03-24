@@ -12,8 +12,8 @@ import (
 
 const (
 	WorkflowOutputsKey        = "outputs"
-	LastCompletedStepIndexKey = "last_completed_step"
-	VersionKey                = "version"
+	LastCompletedStepIndexKey = "__last_completed_step_index"
+	VersionKey                = "__version"
 )
 
 type BaseStepPlugin struct {
@@ -215,17 +215,14 @@ func initWorkflowMessage(workflow WorkflowPlugin, input *Message) *Message {
 func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
 	newInput := initWorkflowMessage(p, input)
 	startIdx := newInput.Metadata[LastCompletedStepIndexKey].(int) + 1
-	if startIdx >= len(p.Steps) {
-		return newInput, nil
-	}
-	steps := p.Steps[startIdx:]
 	log.Debug().Str("workflow", p.Name).Int("startIdx", startIdx).Msg("Execution is started")
-	for idx, step := range steps {
+	for i := startIdx; i < len(p.Steps); i++ {
+		step := p.Steps[i]
 		output, err := executeWorkflowStep(ctx, step, newInput)
 		if err != nil {
-			return nil, err
+			return newInput, err
 		}
-		newInput.SetMetadata(LastCompletedStepIndexKey, idx)
+		newInput.SetMetadata(LastCompletedStepIndexKey, i)
 		if output == nil {
 			continue
 		}

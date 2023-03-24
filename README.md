@@ -41,6 +41,7 @@ We process different customer events and then send them to 200+ destinations. We
   * [Base Plugin](./plugins/base.go)
   * [Bloblang Plugin](./plugins/bloblang.go) (using [bloblang](https://www.benthos.dev/docs/guides/bloblang/about))
   * [Workflow Plugin](./plugins/workflow.go)
+    * Supports retrying from last failed step.
   * [Retryable Plugin](./plugins/retryable.go)
   * [Orchestrator Plugin](./plugins/orchestrator.go)
 * Managers

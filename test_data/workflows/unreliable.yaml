@@ -1,0 +1,11 @@
+name: unreliable
+version: 1
+steps:
+  - name: foo
+    bloblang: root.data = "bar"
+  - name: unreliable
+    plugin: unreliable
+  - name: hello
+    bloblang: root.data = "Hello World!!"
+
+

@@ -8,7 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const someError = "some error"
+const (
+	someError  = "some error"
+	helloWorld = "Hello World!!"
+)
+
+func createWorkflowFromFile(workflowFile string, pluginManager plugins.PluginManager) (*plugins.WorkflowConfig, plugins.WorkflowPlugin, error) {
+	workflowConfig, err := plugins.LoadWorkflowFile(workflowFile)
+	if err != nil {
+		return nil, nil, err
+	}
+	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, *workflowConfig)
+	return workflowConfig, workflowPlugin, err
+}
 
 func createSampleWorkflow() (*plugins.WorkflowConfig, plugins.WorkflowPlugin, error) {
 	pluginManager := plugins.NewBasePluginManager()
@@ -16,12 +28,7 @@ func createSampleWorkflow() (*plugins.WorkflowConfig, plugins.WorkflowPlugin, er
 	pluginManager.Add(bloblPlugin)
 	pluginManager.Add(badPlugin)
 
-	sampleWorkflowConfig, err := plugins.LoadWorkflowFile("../test_data/workflows/sample.yaml")
-	if err != nil {
-		return nil, nil, err
-	}
-	workflowPlugin, err := plugins.NewBaseWorkflowPlugin(pluginManager, *sampleWorkflowConfig)
-	return sampleWorkflowConfig, workflowPlugin, err
+	return createWorkflowFromFile("../test_data/workflows/sample.yaml", pluginManager)
 }
 
 func TestWorkflowEngine(t *testing.T) {
@@ -47,7 +54,7 @@ func TestWorkflowEngine(t *testing.T) {
 
 	result, err = workflowPlugin.Execute(context.Background(), emptyMessage())
 	assert.Nil(t, err)
-	assert.Equal(t, "Hello World!!", result.Data)
+	assert.Equal(t, helloWorld, result.Data)
 }
 
 func TestWorkflowEngineReplay(t *testing.T) {
@@ -59,7 +66,7 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	input.SetMetadata(plugins.WorkflowOutputsKey, map[string]any{"blobl1": "Hello"})
 	result, err := workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
-	assert.Equal(t, "Hello World!!", result.Data)
+	assert.Equal(t, helloWorld, result.Data)
 
 	input.SetMetadata(plugins.LastCompletedStepIndexKey, 4)
 	result, err = workflowPlugin.Execute(context.Background(), input)
@@ -78,6 +85,24 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]any{"test": "test"}, result.Data)
 	assert.Equal(t, workflowConfig.Version, result.Metadata[plugins.VersionKey])
+
+	pluginsManager := plugins.NewBasePluginManager()
+	pluginsManager.Add(newFailingPlugin("unreliable", someError, 1))
+
+	_, unreliableWorkflowPlugin, err := createWorkflowFromFile("../test_data/workflows/unreliable.yaml", pluginsManager)
+	assert.Nil(t, err)
+	result, err = unreliableWorkflowPlugin.Execute(context.Background(), emptyMessage())
+	assert.NotNil(t, err)
+	assert.ErrorContains(t, err, someError)
+	assert.Equal(t, "bar", result.Data)
+	lastCompletedStepIndex := result.Metadata[plugins.LastCompletedStepIndexKey].(int)
+	assert.Equal(t, 0, lastCompletedStepIndex)
+
+	result, err = unreliableWorkflowPlugin.Execute(context.Background(), result)
+	assert.Nil(t, err)
+	lastCompletedStepIndex = result.Metadata[plugins.LastCompletedStepIndexKey].(int)
+	assert.Equal(t, len(unreliableWorkflowPlugin.GetSteps())-1, lastCompletedStepIndex)
+	assert.Equal(t, helloWorld, result.Data)
 }
 
 func TestStepPlugin(t *testing.T) {
@@ -276,7 +301,7 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, workflowPlugin)
 		result, err := workflowPlugin.Execute(context.Background(), emptyMessage())
-		assert.Nil(t, result)
+		assert.NotNil(t, result)
 		assert.NotNil(t, err)
 		assert.ErrorContains(t, err, testCase.expectedError)
 	}
