@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.5.0...v0.5.1) (2023-03-24)
+
+
+### Miscellaneous
+
+* workflow to return partial completion output ([8228147](https://github.com/rudderlabs/rudder-plugins-manager/commit/82281471bf9a21b45d3a9ef7c301bab0d6c482d1))
+
 ## [0.5.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.4.0...v0.5.0) (2023-03-23)
 
 

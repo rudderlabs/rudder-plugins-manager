@@ -85,7 +85,6 @@ type WorkflowPlugin interface {
 	GetVersion() int
 	GetSteps() []StepPlugin
 	GetStep(name string) (StepPlugin, error)
-	GetStatus(data *Message) WorkflowExecutionStatus
 	ExecuteStep(ctx context.Context, stepName string, data *Message) (*Message, error)
 }
 

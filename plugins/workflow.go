@@ -178,7 +178,7 @@ func (p *BaseWorkflowPlugin) GetVersion() int {
 	return p.Version
 }
 
-func (p *BaseWorkflowPlugin) GetStatus(data *Message) WorkflowExecutionStatus {
+func GetWorkflowStatus(data *Message) WorkflowExecutionStatus {
 	if data == nil {
 		return WorkflowExecutionStatusUnknown
 	}
