@@ -91,14 +91,21 @@ func TestWorkflowEngineReplay(t *testing.T) {
 
 	_, unreliableWorkflowPlugin, err := createWorkflowFromFile("../test_data/workflows/unreliable.yaml", pluginsManager)
 	assert.Nil(t, err)
-	assert.Equal(t, plugins.WorkflowExecutionStatusUnknown, plugins.GetWorkflowStatus(nil))
-	assert.Equal(t, plugins.WorkflowExecutionStatusUnknown, plugins.GetWorkflowStatus(emptyMessage()))
+	assert.Nil(t, plugins.GetWorkflowStatus(nil))
+	workflowStatus := plugins.GetWorkflowStatus(emptyMessage())
+	assert.NotNil(t, workflowStatus)
+	assert.Equal(t, plugins.ExecutionStatusUnprocessed, workflowStatus.Status)
 
 	result, err = unreliableWorkflowPlugin.Execute(context.Background(), emptyMessage())
 	assert.NotNil(t, err)
 	assert.ErrorContains(t, err, someError)
 	assert.Equal(t, "bar", result.Data)
-	assert.Equal(t, plugins.WorkflowExecutionStatusFailed, plugins.GetWorkflowStatus(result))
+	workflowStatus = plugins.GetWorkflowStatus(result)
+	assert.NotNil(t, workflowStatus)
+
+	assert.Equal(t, plugins.ExecutionStatusFailed, workflowStatus.Status)
+	assert.Equal(t, someError, workflowStatus.Message)
+
 	lastCompletedStepIndex := result.Metadata[plugins.LastCompletedStepIndexKey].(int)
 	assert.Equal(t, 0, lastCompletedStepIndex)
 
@@ -106,7 +113,9 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	assert.Nil(t, err)
 	lastCompletedStepIndex = result.Metadata[plugins.LastCompletedStepIndexKey].(int)
 	assert.Equal(t, len(unreliableWorkflowPlugin.GetSteps())-1, lastCompletedStepIndex)
-	assert.Equal(t, plugins.WorkflowExecutionStatusCompleted, plugins.GetWorkflowStatus(result))
+	workflowStatus = plugins.GetWorkflowStatus(result)
+	assert.NotNil(t, workflowStatus)
+	assert.Equal(t, plugins.ExecutionStatusCompleted, workflowStatus.Status)
 	assert.Equal(t, helloWorld, result.Data)
 }
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/goccy/go-json"
-	"github.com/huandu/go-clone"
+	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 )
 
@@ -25,7 +25,12 @@ func NewMessage(data any) *Message {
 }
 
 func (m *Message) Clone() *Message {
-	return clone.Slowly(m).(*Message)
+	newMsg, err := Clone(m)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to clone message")
+		newMsg = m
+	}
+	return newMsg
 }
 
 func (m *Message) WithMetadata(key string, value any) *Message {

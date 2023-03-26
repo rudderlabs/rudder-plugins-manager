@@ -72,12 +72,15 @@ type StepPlugin interface {
 	GetRetryPolicy() (RetryPolicy, bool)
 }
 
-type WorkflowExecutionStatus string
+type ExecutionStatus struct {
+	Status  string `json:"status" yaml:"status"`
+	Message string `json:"message" yaml:"message"`
+}
 
 const (
-	WorkflowExecutionStatusUnknown   WorkflowExecutionStatus = "unknown"
-	WorkflowExecutionStatusCompleted WorkflowExecutionStatus = "completed"
-	WorkflowExecutionStatusFailed    WorkflowExecutionStatus = "failed"
+	ExecutionStatusUnprocessed = "unprocessed"
+	ExecutionStatusCompleted   = "completed"
+	ExecutionStatusFailed      = "failed"
 )
 
 type WorkflowPlugin interface {

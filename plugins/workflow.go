@@ -27,6 +27,21 @@ type BaseStepPlugin struct {
 	RetryPolicy RetryPolicy
 }
 
+var executionCompleted = &ExecutionStatus{
+	Status: ExecutionStatusCompleted,
+}
+
+var executionUnprocessed = &ExecutionStatus{
+	Status: ExecutionStatusUnprocessed,
+}
+
+func NewWorkflowExecutionFailed(err error) *ExecutionStatus {
+	return &ExecutionStatus{
+		Status:  "failed",
+		Message: err.Error(),
+	}
+}
+
 func validateStepConfig(config *StepConfig, pluginManager PluginManager) error {
 	if config.Name == "" {
 		return fmt.Errorf("step name is required")
@@ -178,15 +193,15 @@ func (p *BaseWorkflowPlugin) GetVersion() int {
 	return p.Version
 }
 
-func GetWorkflowStatus(data *Message) WorkflowExecutionStatus {
+func GetWorkflowStatus(data *Message) *ExecutionStatus {
 	if data == nil {
-		return WorkflowExecutionStatusUnknown
+		return nil
 	}
 	status, ok := data.GetMetadata(StatusKey)
 	if !ok {
-		return WorkflowExecutionStatusUnknown
+		return executionUnprocessed
 	}
-	return status.(WorkflowExecutionStatus)
+	return status.(*ExecutionStatus)
 }
 
 func executeWorkflowStep(ctx context.Context, step StepPlugin, data *Message) (*Message, error) {
@@ -232,7 +247,7 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 		step := p.Steps[i]
 		output, err := executeWorkflowStep(ctx, step, newInput)
 		if err != nil {
-			newInput.SetMetadata(StatusKey, WorkflowExecutionStatusFailed)
+			newInput.SetMetadata(StatusKey, NewWorkflowExecutionFailed(err))
 			return newInput, err
 		}
 		newInput.SetMetadata(LastCompletedStepIndexKey, i)
@@ -246,7 +261,7 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 			return newInput, nil
 		}
 	}
-	newInput.SetMetadata(StatusKey, WorkflowExecutionStatusCompleted)
+	newInput.SetMetadata(StatusKey, executionCompleted)
 	log.Debug().Str("workflow", p.Name).Msg("Execution is successful")
 	return newInput, nil
 }

@@ -6,7 +6,6 @@ require (
 	github.com/benthosdev/benthos/v4 v4.12.1
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/goccy/go-json v0.10.1
-	github.com/huandu/go-clone v1.5.1
 	github.com/rs/zerolog v1.29.0
 	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.1
