@@ -72,11 +72,20 @@ type StepPlugin interface {
 	GetRetryPolicy() (RetryPolicy, bool)
 }
 
+type WorkflowExecutionStatus string
+
+const (
+	WorkflowExecutionStatusUnknown   WorkflowExecutionStatus = "unknown"
+	WorkflowExecutionStatusCompleted WorkflowExecutionStatus = "completed"
+	WorkflowExecutionStatusFailed    WorkflowExecutionStatus = "failed"
+)
+
 type WorkflowPlugin interface {
 	Plugin
 	GetVersion() int
 	GetSteps() []StepPlugin
 	GetStep(name string) (StepPlugin, error)
+	GetStatus(data *Message) WorkflowExecutionStatus
 	ExecuteStep(ctx context.Context, stepName string, data *Message) (*Message, error)
 }
 

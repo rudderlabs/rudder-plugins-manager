@@ -14,6 +14,7 @@ const (
 	WorkflowOutputsKey        = "outputs"
 	LastCompletedStepIndexKey = "__last_completed_step_index"
 	VersionKey                = "__version"
+	StatusKey                 = "__status"
 )
 
 type BaseStepPlugin struct {
@@ -177,6 +178,17 @@ func (p *BaseWorkflowPlugin) GetVersion() int {
 	return p.Version
 }
 
+func (p *BaseWorkflowPlugin) GetStatus(data *Message) WorkflowExecutionStatus {
+	if data == nil {
+		return WorkflowExecutionStatusUnknown
+	}
+	status, ok := data.GetMetadata(StatusKey)
+	if !ok {
+		return WorkflowExecutionStatusUnknown
+	}
+	return status.(WorkflowExecutionStatus)
+}
+
 func executeWorkflowStep(ctx context.Context, step StepPlugin, data *Message) (*Message, error) {
 	shouldExecute, err := step.ShouldExecute(data)
 	if err != nil {
@@ -220,6 +232,7 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 		step := p.Steps[i]
 		output, err := executeWorkflowStep(ctx, step, newInput)
 		if err != nil {
+			newInput.SetMetadata(StatusKey, WorkflowExecutionStatusFailed)
 			return newInput, err
 		}
 		newInput.SetMetadata(LastCompletedStepIndexKey, i)
@@ -233,6 +246,7 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 			return newInput, nil
 		}
 	}
+	newInput.SetMetadata(StatusKey, WorkflowExecutionStatusCompleted)
 	log.Debug().Str("workflow", p.Name).Msg("Execution is successful")
 	return newInput, nil
 }
