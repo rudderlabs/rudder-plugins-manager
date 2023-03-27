@@ -1,24 +1,16 @@
 package plugins
 
 import (
-	"bytes"
-	"encoding/gob"
-
 	"github.com/samber/lo"
+	"github.com/vmihailenco/msgpack/v5"
 )
-
-func init() {
-	gob.Register(map[string]interface{}{})
-}
 
 func Clone[T any](value T) (T, error) {
 	var newValue T
-	var buffer bytes.Buffer
-	enc := gob.NewEncoder(&buffer) // Will write to buffer.
-	dec := gob.NewDecoder(&buffer) // Will read from buffer.
-	if err := enc.Encode(value); err != nil {
+	valueBytes, err := msgpack.Marshal(value)
+	if err != nil {
 		return newValue, err
 	}
-	lo.Must0(dec.Decode(&newValue))
+	lo.Must0(msgpack.Unmarshal(valueBytes, &newValue))
 	return newValue, nil
 }
