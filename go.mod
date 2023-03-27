@@ -6,6 +6,7 @@ require (
 	github.com/benthosdev/benthos/v4 v4.12.1
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/goccy/go-json v0.10.1
+	github.com/huandu/go-clone/generic v1.5.1
 	github.com/rs/zerolog v1.29.0
 	github.com/samber/lo v1.37.0
 	github.com/stretchr/testify v1.8.1
@@ -22,6 +23,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
+	github.com/huandu/go-clone v1.5.1 // indirect
 	github.com/matoous/go-nanoid/v2 v2.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect

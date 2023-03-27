@@ -11,10 +11,7 @@ import (
 )
 
 const (
-	WorkflowOutputsKey        = "outputs"
-	LastCompletedStepIndexKey = "__last_completed_step_index"
-	VersionKey                = "__version"
-	StatusKey                 = "__status"
+	WorkflowOutputsKey = "outputs"
 )
 
 type BaseStepPlugin struct {
@@ -25,21 +22,6 @@ type BaseStepPlugin struct {
 	Continue    bool
 	Return      bool
 	RetryPolicy RetryPolicy
-}
-
-var executionCompleted = &ExecutionStatus{
-	Status: ExecutionStatusCompleted,
-}
-
-var executionUnprocessed = &ExecutionStatus{
-	Status: ExecutionStatusUnprocessed,
-}
-
-func NewWorkflowExecutionFailed(err error) *ExecutionStatus {
-	return &ExecutionStatus{
-		Status:  "failed",
-		Message: err.Error(),
-	}
 }
 
 func validateStepConfig(config *StepConfig, pluginManager PluginManager) error {
@@ -182,7 +164,7 @@ func NewBaseWorkflowPlugin(pluginManager PluginManager, config WorkflowConfig) (
 		}
 	}
 
-	return &BaseWorkflowPlugin{Name: config.Name, Version: config.Version, Steps: steps}, nil
+	return &BaseWorkflowPlugin{Name: config.Name, Version: config.GetVersion(), Steps: steps}, nil
 }
 
 func (p *BaseWorkflowPlugin) GetName() string {
@@ -191,17 +173,6 @@ func (p *BaseWorkflowPlugin) GetName() string {
 
 func (p *BaseWorkflowPlugin) GetVersion() int {
 	return p.Version
-}
-
-func GetWorkflowStatus(data *Message) *ExecutionStatus {
-	if data == nil {
-		return nil
-	}
-	status, ok := data.GetMetadata(StatusKey)
-	if !ok {
-		return executionUnprocessed
-	}
-	return status.(*ExecutionStatus)
 }
 
 func executeWorkflowStep(ctx context.Context, step StepPlugin, data *Message) (*Message, error) {
@@ -230,27 +201,26 @@ func executeWorkflowStep(ctx context.Context, step StepPlugin, data *Message) (*
 
 func initWorkflowMessage(workflow WorkflowPlugin, input *Message) *Message {
 	newInput := input.Clone()
-	version, ok := newInput.GetMetadata(VersionKey)
-	if !ok || version.(int) != workflow.GetVersion() {
-		newInput.SetMetadata(VersionKey, workflow.GetVersion())
-		newInput.SetMetadata(WorkflowOutputsKey, map[string]any{})
-		newInput.SetMetadata(LastCompletedStepIndexKey, -1)
+	if newInput.Version != workflow.GetVersion() {
+		newInput.Version = workflow.GetVersion()
+		newInput.Status.LastCompletedStepIndex = -1
+		newInput.Metadata[WorkflowOutputsKey] = map[string]any{}
 	}
 	return newInput
 }
 
 func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Message, error) {
 	newInput := initWorkflowMessage(p, input)
-	startIdx := newInput.Metadata[LastCompletedStepIndexKey].(int) + 1
+	startIdx := newInput.Status.LastCompletedStepIndex + 1
 	log.Debug().Str("workflow", p.Name).Int("startIdx", startIdx).Msg("Execution is started")
 	for i := startIdx; i < len(p.Steps); i++ {
 		step := p.Steps[i]
 		output, err := executeWorkflowStep(ctx, step, newInput)
 		if err != nil {
-			newInput.SetMetadata(StatusKey, NewWorkflowExecutionFailed(err))
+			newInput.Status.SetError(err)
 			return newInput, err
 		}
-		newInput.SetMetadata(LastCompletedStepIndexKey, i)
+		newInput.Status.LastCompletedStepIndex = i
 		if output == nil {
 			continue
 		}
@@ -261,7 +231,7 @@ func (p *BaseWorkflowPlugin) Execute(ctx context.Context, input *Message) (*Mess
 			return newInput, nil
 		}
 	}
-	newInput.SetMetadata(StatusKey, executionCompleted)
+	newInput.Status.Status = ExecutionStatusCompleted
 	log.Debug().Str("workflow", p.Name).Msg("Execution is successful")
 	return newInput, nil
 }

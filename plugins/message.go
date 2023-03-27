@@ -4,15 +4,17 @@ import (
 	"fmt"
 
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog/log"
+	clone "github.com/huandu/go-clone/generic"
 	"github.com/samber/lo"
 )
 
 type Message struct {
 	Data any `json:"data"`
 	// This will be used in workflows to store the original input message
-	Input    any            `json:"input"`
-	Metadata map[string]any `json:"metadata"`
+	Input    any             `json:"input"`
+	Version  int             `json:"version"`
+	Status   ExecutionStatus `json:"status"`
+	Metadata map[string]any  `json:"metadata"`
 }
 
 func NewMessage(data any) *Message {
@@ -25,12 +27,7 @@ func NewMessage(data any) *Message {
 }
 
 func (m *Message) Clone() *Message {
-	newMsg, err := Clone(m)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to clone message")
-		newMsg = m
-	}
-	return newMsg
+	return clone.Slowly(m)
 }
 
 func (m *Message) WithMetadata(key string, value any) *Message {

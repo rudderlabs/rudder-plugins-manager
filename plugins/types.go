@@ -72,17 +72,6 @@ type StepPlugin interface {
 	GetRetryPolicy() (RetryPolicy, bool)
 }
 
-type ExecutionStatus struct {
-	Status  string `json:"status" yaml:"status"`
-	Message string `json:"message" yaml:"message"`
-}
-
-const (
-	ExecutionStatusUnprocessed = "unprocessed"
-	ExecutionStatusCompleted   = "completed"
-	ExecutionStatusFailed      = "failed"
-)
-
 type WorkflowPlugin interface {
 	Plugin
 	GetVersion() int
@@ -95,6 +84,13 @@ type WorkflowConfig struct {
 	Name    string       `json:"name" yaml:"name"`
 	Version int          `json:"version" yaml:"version"`
 	Steps   []StepConfig `json:"steps" yaml:"steps"`
+}
+
+func (c *WorkflowConfig) GetVersion() int {
+	if c.Version == 0 {
+		return 1
+	}
+	return c.Version
 }
 
 type StepConfig struct {

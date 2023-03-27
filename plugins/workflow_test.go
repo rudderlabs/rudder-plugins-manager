@@ -61,14 +61,14 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	workflowConfig, workflowPlugin, err := createSampleWorkflow()
 	assert.Nil(t, err)
 	input := emptyMessage()
-	input.SetMetadata(plugins.VersionKey, workflowConfig.Version)
-	input.SetMetadata(plugins.LastCompletedStepIndexKey, 3)
+	input.Version = workflowConfig.Version
+	input.Status.LastCompletedStepIndex = 3
 	input.SetMetadata(plugins.WorkflowOutputsKey, map[string]any{"blobl1": "Hello"})
 	result, err := workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	assert.Equal(t, helloWorld, result.Data)
 
-	input.SetMetadata(plugins.LastCompletedStepIndexKey, 4)
+	input.Status.LastCompletedStepIndex = 4
 	result, err = workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	// No step will be executed as the last completed step index is
@@ -79,43 +79,37 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	// Set version to previous version to test replay
 	// Now the last completed step index will be reset to 0
 	// Workflow will be executed from the beginning
-	input.SetMetadata(plugins.VersionKey, workflowConfig.Version-1)
-	input.SetMetadata(plugins.LastCompletedStepIndexKey, 3)
+	input.Version = workflowConfig.Version - 1
+	input.Status.LastCompletedStepIndex = 3
 	result, err = workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]any{"test": "test"}, result.Data)
-	assert.Equal(t, workflowConfig.Version, result.Metadata[plugins.VersionKey])
+	assert.Equal(t, workflowConfig.Version, result.Version)
 
 	pluginsManager := plugins.NewBasePluginManager()
 	pluginsManager.Add(newFailingPlugin("unreliable", someError, 1))
 
 	_, unreliableWorkflowPlugin, err := createWorkflowFromFile("../test_data/workflows/unreliable.yaml", pluginsManager)
 	assert.Nil(t, err)
-	assert.Nil(t, plugins.GetWorkflowStatus(nil))
-	workflowStatus := plugins.GetWorkflowStatus(emptyMessage())
-	assert.NotNil(t, workflowStatus)
-	assert.Equal(t, plugins.ExecutionStatusUnprocessed, workflowStatus.Status)
+	workflowStatus := plugins.ExecutionStatus{}
+	assert.True(t, workflowStatus.IsUnprocessed())
+	assert.Equal(t, plugins.ExecutionStatusUnprocessed, workflowStatus.GetStatus())
 
 	result, err = unreliableWorkflowPlugin.Execute(context.Background(), emptyMessage())
 	assert.NotNil(t, err)
 	assert.ErrorContains(t, err, someError)
 	assert.Equal(t, "bar", result.Data)
-	workflowStatus = plugins.GetWorkflowStatus(result)
-	assert.NotNil(t, workflowStatus)
 
-	assert.Equal(t, plugins.ExecutionStatusFailed, workflowStatus.Status)
-	assert.Equal(t, someError, workflowStatus.Message)
-
-	lastCompletedStepIndex := result.Metadata[plugins.LastCompletedStepIndexKey].(int)
-	assert.Equal(t, 0, lastCompletedStepIndex)
+	assert.Equal(t, plugins.ExecutionStatusFailed, result.Status.GetStatus())
+	assert.Equal(t, someError, result.Status.Message)
+	assert.Equal(t, 0, result.Status.LastCompletedStepIndex)
 
 	result, err = unreliableWorkflowPlugin.Execute(context.Background(), result)
 	assert.Nil(t, err)
-	lastCompletedStepIndex = result.Metadata[plugins.LastCompletedStepIndexKey].(int)
-	assert.Equal(t, len(unreliableWorkflowPlugin.GetSteps())-1, lastCompletedStepIndex)
-	workflowStatus = plugins.GetWorkflowStatus(result)
-	assert.NotNil(t, workflowStatus)
-	assert.Equal(t, plugins.ExecutionStatusCompleted, workflowStatus.Status)
+
+	assert.Equal(t, len(unreliableWorkflowPlugin.GetSteps())-1, result.Status.LastCompletedStepIndex)
+	assert.Equal(t, plugins.ExecutionStatusCompleted, result.Status.Status)
+	assert.True(t, result.Status.IsCompleted())
 	assert.Equal(t, helloWorld, result.Data)
 }
 
@@ -317,6 +311,7 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 		result, err := workflowPlugin.Execute(context.Background(), emptyMessage())
 		assert.NotNil(t, result)
 		assert.NotNil(t, err)
+		assert.True(t, result.Status.IsFailed())
 		assert.ErrorContains(t, err, testCase.expectedError)
 	}
 }
