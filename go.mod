@@ -21,7 +21,6 @@ require (
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/huandu/go-clone v1.6.0 // indirect
 	github.com/matoous/go-nanoid/v2 v2.0.0 // indirect
