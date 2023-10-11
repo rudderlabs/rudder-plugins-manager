@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.5.1...v0.6.0) (2023-10-11)
+
+
+### Features
+
+* add workflow execution status ([c0ce788](https://github.com/rudderlabs/rudder-plugins-manager/commit/c0ce788a211bc8c80cc8eb0fadd2cc80c5142537))
+
+
+### Miscellaneous
+
+* clone to use go-clone ([86eb849](https://github.com/rudderlabs/rudder-plugins-manager/commit/86eb84947edac5950083d4d4619048fc8057c2f3))
+* workflow status ([ec402a4](https://github.com/rudderlabs/rudder-plugins-manager/commit/ec402a4c23bc3ff3476a07529c1b579dc18a456f))
+
 ## [0.5.1](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.5.0...v0.5.1) (2023-03-24)
 
 
