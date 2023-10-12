@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.6.0...v0.6.1) (2023-10-12)
+
+
+### Miscellaneous
+
+* downgrade benthos/v4 ([6265e5e](https://github.com/rudderlabs/rudder-plugins-manager/commit/6265e5ef39444d262eb89ff918a5c60cb09eab16))
+
 ## [0.6.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.5.1...v0.6.0) (2023-10-11)
 
 
