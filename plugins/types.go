@@ -43,6 +43,7 @@ func (f TransformFunc) Execute(_ context.Context, data *Message) (*Message, erro
 type Manager[T Plugin] interface {
 	ExecutionManager
 	Get(name string) (T, error)
+	Has(name string) bool
 	Add(plugin T)
 }
 

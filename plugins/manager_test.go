@@ -26,10 +26,13 @@ func TestWorkflowManager(t *testing.T) {
 	workflow, err := manager.Get("test")
 	assert.Nil(t, err)
 	assert.Equal(t, testWorkflow, workflow)
+	assert.True(t, manager.Has("test"))
 
 	_, err = manager.Get("non-existent")
 	assert.NotNil(t, err)
 	assert.ErrorContains(t, err, "workflow not found")
+
+	assert.False(t, manager.Has("non-existent"))
 
 	data, err := manager.Execute(context.Background(), "test", emptyMessage())
 	assert.Nil(t, err)
@@ -42,10 +45,13 @@ func TestNewBasePluginManager(t *testing.T) {
 	plugin, err := manager.Get("test")
 	assert.Nil(t, err)
 	assert.Equal(t, "test", plugin.GetName())
+	assert.True(t, manager.Has("test"))
+
 	plugin, err = manager.Get("non-existing-plugin")
 	assert.NotNil(t, err)
 	assert.Nil(t, plugin)
 	assert.ErrorContains(t, err, "plugin not found")
+	assert.False(t, manager.Has("non-existing-plugin"))
 
 	result, err := manager.Execute(context.Background(), "test", emptyMessage())
 	assert.Nil(t, err)

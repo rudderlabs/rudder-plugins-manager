@@ -21,10 +21,15 @@ func (m *BaseManager[T]) Add(plugin T) {
 	m.plugins[plugin.GetName()] = plugin
 }
 
-func (p *BaseManager[T]) Get(name string) (T, error) {
-	plugin, ok := p.plugins[name]
+func (m *BaseManager[T]) Has(name string) bool {
+	_, ok := m.plugins[name]
+	return ok
+}
+
+func (m *BaseManager[T]) Get(name string) (T, error) {
+	plugin, ok := m.plugins[name]
 	if !ok {
-		return plugin, fmt.Errorf("%s %s not found", name, p.Type)
+		return plugin, fmt.Errorf("%s %s not found", name, m.Type)
 	}
 	return plugin, nil
 }
