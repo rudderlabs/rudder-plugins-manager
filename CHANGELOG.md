@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.6.1...v0.7.0) (2023-10-12)
+
+
+### Features
+
+* add has plugin method to manager ([25ff059](https://github.com/rudderlabs/rudder-plugins-manager/commit/25ff0599df51ccfe14d739871d8d0707bdcd8068))
+
 ## [0.6.1](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.6.0...v0.6.1) (2023-10-12)
 
 
