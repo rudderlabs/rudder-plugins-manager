@@ -6,8 +6,6 @@
 ### Features
 
 * add support expr plugins ([31bf9aa](https://github.com/rudderlabs/rudder-plugins-manager/commit/31bf9aa31bc85c342858f6fbc29f944c2007915f))
-* add support expr plugins ([5f862c8](https://github.com/rudderlabs/rudder-plugins-manager/commit/5f862c83ec34dbe0f38bb95a7757a7307cfb3ff0))
-* add support expr plugins ([3a82195](https://github.com/rudderlabs/rudder-plugins-manager/commit/3a821956d554cbd4332c0801ec5bebc21548aeed))
 
 ## [0.7.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.6.1...v0.7.0) (2023-10-12)
 
