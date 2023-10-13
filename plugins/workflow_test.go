@@ -290,10 +290,10 @@ func TestWorkflowInvalidConfig(t *testing.T) {
 				Name: "test",
 				Steps: []plugins.StepConfig{
 					{
-						Name:     "test",
+						Name:       "test",
 						CheckBlobl: "this",
-						CheckExpr: "this",
-						Bloblang: "this",
+						CheckExpr:  "this",
+						Bloblang:   "this",
 					},
 				},
 			},

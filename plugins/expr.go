@@ -11,10 +11,11 @@ import (
 )
 
 /**
- * This is transforms the data using bloblang template.
+ * This is transforms the data using expr template.
+ * Ref: github.com/antonmedv/expr
  */
 type ExpressionPlugin struct {
-	Name     string
+	Name    string
 	program *vm.Program
 }
 
