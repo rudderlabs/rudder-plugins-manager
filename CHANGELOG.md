@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.8.0...v0.8.1) (2023-10-13)
+
+
+### Miscellaneous
+
+* update workflows ([b89477e](https://github.com/rudderlabs/rudder-plugins-manager/commit/b89477e4810e7ec83075deaf40fd19824cfbf2b5))
+
 ## [0.8.0](https://github.com/rudderlabs/rudder-plugins-manager/compare/v0.7.0...v0.8.0) (2023-10-13)
 
 
