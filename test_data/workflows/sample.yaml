@@ -2,12 +2,12 @@ name: sample
 version: 1
 steps:
   - name: test
-    check: this.data.test == "test"
+    check_blobl: this.data.test == "test"
     plugin: test
     return: true
 
   - name: bad_check
-    check: throw("error")
+    check_blobl: throw("error")
     plugin: test
     continue: true
     
@@ -21,4 +21,9 @@ steps:
 
   - name: blobl2
     bloblang: |
-      root.data = this.metadata.outputs.blobl1 + " World!!"
+      root.data = this.metadata.outputs.blobl1 + " World"
+  
+  - name: expr1
+    check_expr: "1 + 1 == 2"
+    expr: |
+      { data: metadata.outputs.blobl2 + "!!"}

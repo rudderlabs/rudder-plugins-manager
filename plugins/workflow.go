@@ -37,7 +37,11 @@ func validateStepConfig(config *StepConfig, pluginManager PluginManager) error {
 		return fmt.Errorf("plugin manager is required when plugin is set")
 	}
 
-	if config.Check == "" && config.Return {
+	if config.CheckBlobl != "" && config.CheckExpr != "" {
+		return fmt.Errorf("only one of check_blobl and check_expr is allowed")
+	}
+
+	if config.CheckBlobl == "" && config.CheckExpr == "" && config.Return {
 		return fmt.Errorf("return is only allowed when check is set")
 	}
 	return nil
@@ -47,6 +51,8 @@ func getMainStepExecutor(config *StepConfig, pluginManager PluginManager) (Execu
 	switch config.GetType() {
 	case BloblangStep:
 		return NewBloblangPlugin(config.Name, config.Bloblang)
+	case ExpressionStep:
+		return NewExpressionPlugin(config.Name, config.Expr)
 	default:
 		plugin, err := pluginManager.Get(config.Plugin)
 		if err != nil {
@@ -79,8 +85,14 @@ func NewBaseStepPlugin(pluginManager PluginManager, config StepConfig) (StepPlug
 		stepPlugin.Main = NewBaseRetryableExecutor(stepPlugin.Main, stepPlugin.RetryPolicy)
 	}
 
-	if config.Check != "" {
-		check, err := NewBloblangPlugin(fmt.Sprintf("%s.check", config.Name), config.Check)
+	if config.CheckBlobl != "" {
+		check, err := NewBloblangPlugin(fmt.Sprintf("%s.check", config.Name), config.CheckBlobl)
+		if err != nil {
+			return nil, err
+		}
+		stepPlugin.Check = check
+	} else if config.CheckExpr != "" {
+		check, err := NewExpressionPlugin(fmt.Sprintf("%s.check", config.Name), config.CheckExpr)
 		if err != nil {
 			return nil, err
 		}

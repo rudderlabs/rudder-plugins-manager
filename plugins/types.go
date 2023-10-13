@@ -54,9 +54,10 @@ type ExecutionManager interface {
 type StepType string
 
 const (
-	BloblangStep StepType = "bloblang"
-	PluginStep   StepType = "plugin"
-	UnknownStep  StepType = "unknown"
+	BloblangStep   StepType = "bloblang"
+	PluginStep     StepType = "plugin"
+	ExpressionStep StepType = "expression"
+	UnknownStep    StepType = "unknown"
 )
 
 type RetryPolicy interface {
@@ -95,13 +96,15 @@ func (c *WorkflowConfig) GetVersion() int {
 }
 
 type StepConfig struct {
-	Name     string           `json:"name" yaml:"name"`
-	Check    string           `json:"check" yaml:"check"`
-	Return   bool             `json:"return" yaml:"return"`
-	Continue bool             `json:"continue" yaml:"continue"`
-	Plugin   string           `json:"plugin" yaml:"plugin"`
-	Bloblang string           `json:"bloblang" yaml:"bloblang"`
-	Retry    *BaseRetryPolicy `json:"retry" yaml:"retry"`
+	Name       string           `json:"name" yaml:"name"`
+	CheckBlobl string           `json:"check_blobl" yaml:"check_blobl"`
+	CheckExpr  string           `json:"check_expr" yaml:"check_expr"`
+	Return     bool             `json:"return" yaml:"return"`
+	Continue   bool             `json:"continue" yaml:"continue"`
+	Plugin     string           `json:"plugin" yaml:"plugin"`
+	Bloblang   string           `json:"bloblang" yaml:"bloblang"`
+	Expr       string           `json:"expr" yaml:"expr"`
+	Retry      *BaseRetryPolicy `json:"retry" yaml:"retry"`
 }
 
 func (c *StepConfig) GetType() StepType {
@@ -109,6 +112,8 @@ func (c *StepConfig) GetType() StepType {
 		return BloblangStep
 	} else if c.Plugin != "" {
 		return PluginStep
+	} else if c.Expr != "" {
+		return ExpressionStep
 	}
 	return UnknownStep
 }

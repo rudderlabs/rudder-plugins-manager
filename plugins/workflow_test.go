@@ -62,13 +62,13 @@ func TestWorkflowEngineReplay(t *testing.T) {
 	assert.Nil(t, err)
 	input := emptyMessage()
 	input.Version = workflowConfig.Version
-	input.Status.LastCompletedStepIndex = 3
-	input.SetMetadata(plugins.WorkflowOutputsKey, map[string]any{"blobl1": "Hello"})
+	input.Status.LastCompletedStepIndex = 4
+	input.SetMetadata(plugins.WorkflowOutputsKey, map[string]any{"blobl2": "Hello World"})
 	result, err := workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	assert.Equal(t, helloWorld, result.Data)
 
-	input.Status.LastCompletedStepIndex = 4
+	input.Status.LastCompletedStepIndex = 5
 	result, err = workflowPlugin.Execute(context.Background(), input)
 	assert.Nil(t, err)
 	// No step will be executed as the last completed step index is
@@ -211,9 +211,9 @@ func TestWorkflowInvalidConfig(t *testing.T) {
 				Name: "test",
 				Steps: []plugins.StepConfig{
 					{
-						Name:     "test",
-						Check:    "some check",
-						Bloblang: "this",
+						Name:       "test",
+						CheckBlobl: "some check",
+						Bloblang:   "this",
 					},
 				},
 			},
@@ -249,6 +249,31 @@ func TestWorkflowInvalidConfig(t *testing.T) {
 				Name: "test",
 				Steps: []plugins.StepConfig{
 					{
+						Name:      "test",
+						CheckExpr: `some error`,
+						Bloblang:  `this`,
+					},
+				},
+			},
+			expectedError: "failed to parse expression",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name: "test",
+						Expr: `some error`,
+					},
+				},
+			},
+			expectedError: "failed to parse expression",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
 						Name:     "test",
 						Bloblang: "this",
 					},
@@ -259,6 +284,20 @@ func TestWorkflowInvalidConfig(t *testing.T) {
 				},
 			},
 			expectedError: "workflow steps must have unique names",
+		},
+		{
+			workflowConfig: plugins.WorkflowConfig{
+				Name: "test",
+				Steps: []plugins.StepConfig{
+					{
+						Name:     "test",
+						CheckBlobl: "this",
+						CheckExpr: "this",
+						Bloblang: "this",
+					},
+				},
+			},
+			expectedError: "only one of check_blobl and check_expr is allowed",
 		},
 	}
 
@@ -273,7 +312,7 @@ func TestWorkflowInvalidConfig(t *testing.T) {
 func TestWorkflowExecutionFailures(t *testing.T) {
 	type errorTestCase struct {
 		workflowConfig plugins.WorkflowConfig
-		expectedError  string
+		executionError string
 	}
 
 	testCases := []errorTestCase{
@@ -287,20 +326,20 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 					},
 				},
 			},
-			expectedError: someError,
+			executionError: someError,
 		},
 		{
 			workflowConfig: plugins.WorkflowConfig{
 				Name: "test",
 				Steps: []plugins.StepConfig{
 					{
-						Name:     "test",
-						Check:    `throw("some error")`,
-						Bloblang: `this`,
+						Name:       "test",
+						CheckBlobl: `throw("some error")`,
+						Bloblang:   `this`,
 					},
 				},
 			},
-			expectedError: someError,
+			executionError: someError,
 		},
 	}
 	for _, testCase := range testCases {
@@ -312,7 +351,7 @@ func TestWorkflowExecutionFailures(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.NotNil(t, err)
 		assert.True(t, result.Status.IsFailed())
-		assert.ErrorContains(t, err, testCase.expectedError)
+		assert.ErrorContains(t, err, testCase.executionError)
 	}
 }
 
