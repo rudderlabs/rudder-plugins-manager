@@ -3,6 +3,7 @@ module github.com/rudderlabs/rudder-plugins-manager
 go 1.21
 
 require (
+	github.com/antonmedv/expr v1.15.3
 	github.com/benthosdev/benthos/v4 v4.21.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/goccy/go-json v0.10.2
@@ -16,7 +17,6 @@ require (
 require (
 	github.com/Jeffail/gabs/v2 v2.7.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
-	github.com/antonmedv/expr v1.15.3 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
@@ -38,7 +38,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090 // indirect
-	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 )
