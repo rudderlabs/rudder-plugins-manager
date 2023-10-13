@@ -17,11 +17,11 @@ coverage:
 
 install-tools:
 	go install mvdan.cc/gofumpt@latest
-	go install gotest.tools/gotestsum@v1.8.2
+	go install gotest.tools/gotestsum@latest
 
 .PHONY: lint
 lint: fmt ## Run linters on all go files
-	docker run --rm -v $(shell pwd):/app:ro -w /app golangci/golangci-lint:v1.51.1 bash -e -c \
+	docker run --rm -v $(shell pwd):/app:ro -w /app golangci/golangci-lint:latest bash -e -c \
 		'golangci-lint run -v --timeout 5m'
 
 .PHONY: fmt
